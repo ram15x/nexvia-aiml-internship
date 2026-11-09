@@ -1,169 +1,87 @@
-# Large-Scale Personalized Recommendation Engine
-The project overview is hosted for free on [GitHub Pages](https://ram15x.github.io/personalized-recommendation-engine/). It is an informational page, not a hosted recommendation API. The public repository contains code, documentation, and aggregate reports; raw MovieLens data and per-user exports are excluded under the dataset terms. The interactive demo runs locally when its serving artifacts are present; those local artifacts are not included in the public repository.
+# Large-Scale Personalised Recommendation Engine (AIML-03)
 
+A two-stage recommender on MovieLens 25M: two candidate generators (a TensorFlow Recommenders **two-tower** retriever indexed in **FAISS**, and **item-based CF**), a deep **ranker** (DCN-v2, with Wide & Deep as the A/B challenger), **cold-start fallbacks**, a **Redis**-cached **FastAPI** service, **Spark** feature tables, an **Airflow** retraining DAG with a quality gate, and Triton-ready SavedModels.
 
-A two-stage recommendation prototype: retrieve a short candidate list, then rank it. The current code is an offline research prototype, not a production recommender.
+![architecture](docs/architecture.png)
 
-The target system and what is implemented versus pending are described in [the architecture note](docs/architecture.md).
+## Results
 
-## Current state
+Everything is measured with a **time split** (train < 2016-06-25 < validation < 2018-01-04 <= test). The test window was scored **once**, with models frozen at the train cut-off. 6,252 test users (>= 5 prior likes, >= 1 relevant item), 95% bootstrap intervals in `results/final_test.json`.
 
-The local Docker demo uses ItemKNN for liked movie history, popularity when there is no usable history, explicit genre matching when genres are supplied, and Redis response caching. A native experimental API loads saved two-tower and DCN artifacts. Its tested two-tower-to-DCN request fell back because the ranker did not support every retrieved candidate. A read-only vocabulary audit found a median of 62 supported items among the raw top 100 and no complete 100-item match for the 1,951 shared users; that audit did not apply user-history filtering or measure recommendation quality. The DCN candidate model reranked ItemKNN candidates in the opt-in A/B route, but its recorded offline comparison was below ItemKNN. Neither learned path is promoted as the default. The full MovieLens Spark feature job passed in a Linux container with the pinned Spark 4.0.5 version; two Spark pytest cases still fail when run directly on Windows because Hadoop `winutils.exe` is unavailable. A full-suite run in a temporary Python 3.10 environment with FAISS 1.10.0 and TensorFlow Recommenders 0.7.3 recorded 63 passed and 1 skipped (PySpark is not installed). The active system Python environment still stops during collection because FAISS is absent there. See `reports/development/demo-and-test-verification-2026-11-05.md` for the exact command and earlier failures. Airflow 3 discovered the manual DAG without import errors, and the preflight helper passed against the actual ratings file and split hash; no retraining task was run. The DCN ranker loaded in Triton on CPU and returned live HTTP scores matching the TensorFlow model; this verifies serving compatibility, not recommendation improvement. Genuine online A/B outcomes remain unmeasured. See the status note and dated verification report for exact evidence.
+| System (test window) | Recall@10 | NDCG@10 | Recall@100 |
+|---|---|---|---|
+| Popularity | 0.0260 | 0.0728 | 0.116 |
+| Two-tower retriever alone | 0.0328 | 0.0857 | 0.169 |
+| Item-KNN alone | 0.0411 | 0.1091 | 0.182 |
+| **Full system, DCN-v2 ranker** | **0.0514** | **0.1272** | **0.210** |
+| Full system, Wide & Deep ranker | 0.0509 | 0.1273 | 0.211 |
 
-The public GitHub repository is [ram15x/personalized-recommendation-engine](https://github.com/ram15x/personalized-recommendation-engine); local `main` tracks `origin/main`. Raw MovieLens data, model checkpoints, indexes, and per-user exports are excluded from Git. A clean clone must obtain its own MovieLens files and regenerate the local popularity and ItemKNN artifacts before it can build the full Docker demo. GroupLens says it typically does not permit public redistribution of MovieLens datasets; do not commit the ratings file or derived user-level exports. See the [GroupLens dataset terms](https://grouplens.org/datasets/movielens/) and the included usage notes.
+- The full system beats the strongest single retriever by **+0.018 NDCG@10** (95% CI 0.015 to 0.021) and popularity by +0.054.
+- DCN-v2 and Wide & Deep are **statistically tied** (NDCG@10 difference -0.0001, CI -0.0014 to +0.0011).
+- **Simulated** A/B replay on the same users: CTR 5.43% (DCN-v2) vs 5.47% (Wide & Deep), p = 0.85. This is a replay of held-out interactions, not live traffic; see `docs/limitations.md`.
+- On validation the ranker's edge over the best retriever was larger (+0.049); it shrank on the later test window, which suggests part of it was window-specific. The two-tower retriever on its own does **not** beat item-KNN here.
+- Serving: median **10.6 ms** uncached on a 2-CPU container, **0.15 ms** with a Redis hit; the serving path reproduces the offline NDCG@10 (0.184 vs 0.184 on 508 held-out validation users). FAISS HNSW matches exact search (Recall@100 0.2321 vs 0.2323).
 
-## Run it
+Full tables, validation numbers, the cold-start cohorts and every caveat: `docs/results.md`, `docs/limitations.md`.
 
-For the CPU demo, install Docker Desktop and start it, then run from this folder:
+## Repository layout
 
-```powershell
-docker compose up --build --wait
+```
+src/rec/          data, features, evaluation, retrieval (two-tower), index (FAISS), knn, candidates, ranking,
+                  serving, api, cache, coldstart, store (Spark tables), gate, triton_client, ranker_io, spark_features
+scripts/          prepare_data, to_parquet, train_retrieval, eval_retrieval, eval_index, itemknn_baseline,
+                  train_ranker(_union), build_bundle, eval_serving, eval_cohorts, final_eval, make_triton_repo
+airflow/dags/     retrain_recommender.py
+triton/           model_repository/ (generated by make_triton_repo.py)
+tests/            unit and integration tests
+results/          JSON outputs behind every number above
+docs/             architecture, data_and_api, results, limitations, triton
+research/         earlier experiments kept for history (not used by the pipeline)
 ```
 
-Compose waits for the API health check and Redis before returning. Open `http://127.0.0.1:8810/`. Stop the services with `docker compose down`. The demo uses the included movie catalog and precomputed ItemKNN and popularity artifacts; it does not train a model or read the full ratings file. See **Docker demo (CPU)** below for the artifact paths and limitations.
+## Setup
 
-For native API use, install Python 3.10, create a virtual environment, and install only the serving requirements:
-
-```powershell
-py -3.10 -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements-api.txt
-.\.venv\Scripts\python -m uvicorn scripts.recommendation_api:app --host 127.0.0.1 --port 8000
+```bash
+python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt   # Python 3.12 or 3.13; Java 17+ for Spark
+# data: download ml-25m from https://grouplens.org/datasets/movielens/25m/
+python scripts/prepare_data.py ml-25m/ratings.csv data/parts --parts 4 && cp ml-25m/movies.csv data/movies.csv
+python scripts/to_parquet.py data/parts data/ratings.parquet
 ```
 
-The native API defaults to `reports/ml-25m/popularity.csv` and `data/ml-25m/movies.csv`. The optional ItemKNN settings are described below. Research and testing dependencies are separate; installing TensorFlow or running the offline baseline is not necessary to use the demo. Do not overwrite the saved evaluation reports when running new experiments.
+## Reproduce
 
-### Spark feature tables
-
-The Spark preparation job is `scripts/spark_prepare_features.py`. It writes separate Parquet tables for training interactions, the following validation interval, training-only user aggregates, genres for items in the training catalog, and training-only item popularity. Its default interval is the previously explored MovieLens 60/70 development window (cutoffs recorded in `docs/requirements-status.md`); this is a development pipeline, not an independent evaluation. Validation outcomes do not contribute to user, item, or popularity aggregates. Spark scans the source CSV to apply the time filter, but rows at or after the validation end are excluded from output tables and aggregates.
-
-Windows note: on this machine the two Spark Parquet-write pytest cases fail because Hadoop `winutils.exe` and `HADOOP_HOME` are missing. The complete feature job has separately passed in the official Spark 4.0.5 Linux container against the already-local MovieLens 25M files. See the verification report for row counts and the command. For Windows test-suite runs, use a configured Hadoop environment or run the Spark tests in Linux.
-
-Install Spark separately and run from the project root:
-
-```powershell
-python -m pip install -r requirements-spark.txt
-python scripts/spark_prepare_features.py `
-  --ratings data/ml-25m/ratings.csv `
-  --movies data/ml-25m/movies.csv `
-  --output reports/spark-features-60-70
+```bash
+export PYTHONPATH=src
+python -m rec.spark_features data/ratings.parquet data/features --train-before 1466837400            # ~30 s
+python scripts/train_retrieval.py --parts data/parts --movies data/movies.csv --out runs/tt \
+       --epochs 8 --per-epoch 1638400 --lr 5e-4 --l2 1e-6                                              # ~12 min on 2 CPUs
+python scripts/itemknn_baseline.py --parts data/parts --movies data/movies.csv --out results/itemknn_val_warm.json
+python scripts/eval_retrieval.py --run runs/tt --parts data/parts --movies data/movies.csv             # full warm validation cohort
+python scripts/build_bundle.py --run runs/tt --knn results/itemknn_val_warm.neighbours.npz \
+       --features data/features --parts data/parts --movies data/movies.csv --out bundle               # trains rankers, exports SavedModels
+python scripts/final_eval.py --bundle bundle --parts data/parts --movies data/movies.csv --window val_dev --out /tmp/dev.json
+# the test window: run once, only when nothing else will change
+python scripts/final_eval.py --bundle bundle --parts data/parts --movies data/movies.csv --window test --out results/final_test.json
 ```
 
-The output path must be new; the job refuses to overwrite it. The job writes to a temporary staging folder and publishes the completed folder only after table writes and counts succeed; a failed run removes its staging folder. This produces feature tables only. It does not train or evaluate a recommender, serve predictions, or establish online CTR. On 5 November the full local MovieLens 25M source completed with Spark 4.0.5: 12,500,047 training rows and 2,500,010 validation rows; 89,881 training users and 9,659 training items. The 97 MB output was temporary and removed after verification. This was a data-preparation check, not a new model result.
+## Run the service
 
-## Local recommendation API
+```bash
+BUNDLE=bundle REDIS_URL=redis://localhost:6379/0 PYTHONPATH=src uvicorn rec.api:app --port 8000
+curl -s localhost:8000/recommend -H 'content-type: application/json' -d '{"liked_movie_ids":[260,1196,1210],"k":5}'
+curl -s localhost:8000/recommend -H 'content-type: application/json' -d '{"k":5,"genres":["Documentary"]}'      # cold start
+curl -s localhost:8000/recommend/ab -H 'content-type: application/json' -d '{"user_id":42,"k":5}'              # A/B arm by user hash
+# or: docker compose up   (API + Redis; `--profile triton` adds Triton, see docs/triton.md)
+```
+API reference: `docs/data_and_api.md`.
 
-The API defaults to the measured MovieLens 25M training-period popularity baseline. A request can instead supply explicit genre preferences for a transparent content-based cold-start list; a configured ItemKNN artifact can use a liked/highly-rated history. An optional Redis response cache is enabled with `NEXVIA_REDIS_URL`; it is off by default. Opt-in native API paths for the experimental two-tower pilot and DCN, including a combined experimental call, are described in [the API documentation](docs/api.md); they are not enabled in Docker Compose or the browser UI. Their saved development results were below their respective baselines, and combined ranking quality is unmeasured. The same server serves the HTML interface in `demo.html` at `/`.
+## Tests
 
-With the MovieLens 25M files and the baseline artifact in place, start the API from this folder:
-
-```powershell
-python -m pip install -r requirements-api.txt
-python -m uvicorn scripts.recommendation_api:app --host 127.0.0.1 --port 8000
+```bash
+PYTHONPATH=src pytest tests -q                                  # unit tests
+BUNDLE=bundle PYTHONPATH=src pytest tests -q                    # adds API and Triton-client tests (need a built bundle)
 ```
 
-The default files are `reports/ml-25m/popularity.csv` and `data/ml-25m/movies.csv`. Override them with `NEXVIA_POPULARITY_PATH` and `NEXVIA_MOVIES_PATH` if needed. Check `http://127.0.0.1:8000/health`, then send a request:
+## Scheduled retraining (Airflow)
 
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/recommend -ContentType 'application/json' -Body '{"history_item_ids":[318],"limit":10}'
-```
-
-The service rejects missing or inconsistent artifacts at startup and returns an explicit error when the supplied history excludes the entire catalog or no unseen movies match the requested genres. The content fallback uses existing movie metadata and needs no model training or extra dataset. The optional experimental ranker is not an independently validated production ranking model.
-
-### Docker demo (CPU)
-
-Docker Compose starts the API and Redis and loads the saved sparse ItemKNN matrix plus popularity counts built at the same 60% training cutoff. No GPU or training is needed to run it. The build context includes only the movie catalog, small precomputed tables, and ItemKNN files; it excludes the 678 MB `ratings.csv`. Serving uses NumPy and does not require pandas or SciPy.
-
-```powershell
-docker compose up --build --wait
-```
-
-Open `http://127.0.0.1:8810/`. Movie IDs entered with no genre preferences are treated as liked/highly rated history; seen items are excluded. Preferred genres select the explicit metadata fallback. With no usable history or preferences, the API uses training-period popularity. The Docker ItemKNN artifact is a 60/70 development candidate selected after examining earlier results, so it is not independent validation and does not establish production performance. The Compose demo does not serve the TFRS/FAISS two-tower or DCN ranker.
-
-Stop the local containers with:
-
-```powershell
-docker compose down
-```
-
-### Optional ItemKNN serving path
-
-The native API has an optional sparse ItemKNN path behind three settings: `NEXVIA_ITEM_SIMILARITY_PATH`, `NEXVIA_ITEM_IDS_PATH`, and `NEXVIA_ITEMKNN_METADATA_PATH`. The API requirements include NumPy for this path; TensorFlow and FAISS are not needed for serving it. When configuring this artifact, also set `NEXVIA_POPULARITY_PATH` to its sibling `training_popularity.csv`; this keeps popularity fallback and tie-breaking on the same time cutoff. Docker Compose does this automatically and loads the artifact through its hash-checked manifest. The live HTTP route and browser form returned five cosine-neighbor recommendations for history ID 318 and excluded 318. Requests with explicit genres still use the content fallback; requests without usable history use cutoff-aligned popularity. The ItemKNN evaluation uses a reused development window and is not independent validation. Two candidate-conditioned DCN checks on saved earlier/later exports ranked below ItemKNN ordering on the 386 shared users, so neither was promoted or served. See the [pointwise report](reports/development/dcn-itemknn-candidate-ranker-50-60-to-60-70-v1.md) and [pairwise report](reports/development/dcn-pairwise-candidates-50-60-to-60-70-v1.md). Since ItemKNN was fit on ratings `>= 4`, supplied history should represent liked or highly rated movies; the API cannot infer preference from a movie being merely seen. `/health` reports whether ItemKNN loaded; each recommendation response names the strategy.
-
-Redis is checked before the sparse ItemKNN calculation, so a repeated identical request can return without repeating that scoring work. The cache is versioned and uses a 300-second TTL; a regression test confirms an ItemKNN cache hit skips rescoring.
-
-The evaluator saves `positive_item_ids.npy` and the hash-checked manifest alongside the similarity matrix. The 60/70 artifact hashes and dimensions were verified. The fixture tests still cover mapping mismatch and fallback; these tests are separate from the MovieLens evaluation results.
-
-Both ItemKNN evaluation scripts accept `--export-candidate-lists`. The corrected evaluator selects users with any observed rating in the held-out window, then reports both all-observed warm-user metrics and the positive-target subgroup. By default it samples at most 2,000 eligible warm users (seed 42), without using rating values to select them. Set `--max-users 0` to request all eligible users. Item-item similarities are computed in 64-item blocks. The corrected 50/60 and 60/70 candidate exports each contain 2,000 user lists with 500 candidates per user; unrated candidates remain unknown, not negative labels. Two DCN candidate-ranker checks used the 50/60 export for training and evaluated the 386 shared users in 60/70. Both scored below ItemKNN order on Recall@10 and NDCG@10 and are not promoted. The earlier 86-user pilot is retained and labeled low-support.
-
-For request/response fields and error behavior, see [the API documentation](docs/api.md).
-
-### FAISS-aligned experimental ranker
-
-An opt-in native API route retrieves candidates from the saved two-tower FAISS index and reranks them with a compact feature-based deep-and-cross model. On a reused development window it ranked better than FAISS order but did not clearly beat popularity order on the same candidates; absolute metrics were low. The route is not enabled in the default Docker demo. When configured in the native API, it is also available through the experimental browser form. Setup, response fields, and limitations: [API documentation](docs/api.md); results: [development report](reports/development/faiss-aligned-ranker-result.md).
-
-### Ranking-model work in progress
-
-The pointwise ranker previously treated IDs in its candidate vocabulary as trained even when they had no labeled training example. The native inference guard now requires labeled-training support and falls back otherwise. Earlier ranker results were produced before this correction and do not measure the updated behavior; see [the support audit](reports/development/ranker-training-support-audit.md).
-
-`scripts/dcn_ranker.py` contains a DCN-v1 scorer. A bounded 70/80 rating diagnostic performed worse than a simple user/item-mean baseline. On retrieved candidates, the pointwise DCN scored NDCG@10 0.10127 vs 0.11075 for ItemKNN order (paired difference -0.00903, 95% interval -0.02198 to +0.00219). A pairwise objective was also worse: NDCG@10 0.05441 vs 0.11075 (difference -0.05621, interval -0.07410 to -0.03913). Neither is promoted or evidence of CTR. Both checks use reused development data. The pointwise model is available only through an opt-in native API path; Docker Compose and the browser UI do not enable it. See the [pointwise report](reports/development/dcn-itemknn-candidate-ranker-50-60-to-60-70-v1.md), [pairwise report](reports/development/dcn-pairwise-candidates-50-60-to-60-70-v1.md), [earlier diagnostic](reports/development/dcn-rating-diagnostic-70-80-2026-11-05-corrected.md), and [ranker protocol](docs/ranking-model-protocol.md).
-
-## Data
-
-Official source: https://grouplens.org/datasets/movielens/25m/
-
-Download: https://files.grouplens.org/datasets/movielens/ml-25m.zip
-
-Keep the supplied README with the data and review its usage terms before sharing datasets. Raw data is excluded from Git. Share download instructions rather than copying the dataset into the final public folder until its terms have been checked.
-
-Two historical smoke reports use GroupLens `ml-latest-small`; that small raw fixture is no longer kept in this folder. Those smoke metrics are not results on MovieLens 25M. The retained raw dataset is `ml-25m`.
-
-## What the baseline measures
-
-- Split all ratings by global time: about 80% training, 10% validation and 10% test. Equal timestamps stay together.
-- Treat a rating of 4 or 5 as a positive interaction.
-- Rank movies by the number of positive training ratings. Break ties by movie ID.
-- Recommend from the complete training catalog, excluding anything the user rated before that evaluation window.
-- Keep the model fixed after training. Validation interactions are added to the history used to filter test recommendations, not to popularity counts.
-- Compute binary Recall@10 and NDCG@10 per user, then average users equally.
-- Count positive movies absent from the training catalog as misses. Report that fraction instead of hiding it.
-- Report warm and cold users separately. Here cold means no observed history before the evaluation window; later embedding models must separately track users absent from model training.
-
-This is an offline rating-based experiment. A high rating is a proxy for preference, not an observed click. It cannot establish click-through rate or an online A/B-test improvement. Users without positive targets are excluded from ranking averages and counted separately. The model and candidate catalog are intentionally frozen; new-item availability is not modeled.
-
-## Current development status
-
-The source, documentation, tests, and presentation are published in the public [GitHub repository](https://github.com/ram15x/personalized-recommendation-engine). Raw MovieLens data and local model artifacts remain outside Git.
-
-The folder also contains ID-only TensorFlow Recommenders two-tower retrieval pilots with exact FAISS inner-product search. The saved 500,000-interaction pilot scored below popularity on its reused 2,000-user validation cohort, especially for users with learned embeddings. A fixed genre-profile candidate diagnostic was also below popularity on that same cohort. Neither result is an independent test.
-
-A saved Colab run using all 9.98 million training-positive pairs also scored below popularity on the same reused validation window. Its warm-user Recall@10 was 0.00026 versus 0.01902 for popularity; the saved output and its limitations are recorded in [the Colab run audit](reports/existing-colab-retrieval-audit.md). This finding means the larger sample did not fix the observed ranking problem; the audit does not identify its cause.
-
-An additional time-window audit split the existing first 80% period into an earlier 70% training window and a following 10% validation window. Of the 19,403 users with a positive target, 81.65% had no prior rating history; 25.93% of distinct positive-target items were absent from the earlier training catalog. Historical retrieval checkpoints trained through this validation period, so they cannot be compared on it as held-out candidates. See [requirements and status](docs/requirements-status.md), [experiment protocol](docs/experiment-protocol.md), and the detailed counts in `reports/development/temporal-split-audit.json`.
-
-The first three-epoch Colab evaluation on the 70/80 development window used only the 18,405 positively rated training items as its catalog denominator; its reported 100% coverage was invalid. The corrected run used all 22,931 movies rated in the training window. The two-tower indexed 18,405 (80.26%). Among 3,550 users with learned embeddings, retrieval Recall@100 was 0.00438 on all eligible targets; on the matched subset whose target items were indexed, retrieval Recall@100 was 0.00494 versus 0.14821 for popularity. Warm top-10 Recall@10 was 0.00045 with retrieval versus 0.03362 with popularity. The 15,843 users without history and 10 users with history but no embedding used popularity fallback, so overall scores are not evidence of personalized retrieval. This result does not support shipping the learned retriever. The split is a development window, not an independent test. See the [corrected run report](reports/development/two_tower_70_80_fullcatalog_2026-11-05.md) and [metrics](reports/development/two_tower_70_80_fullcatalog_2026-11-05.json); the earlier, flawed output remains preserved in the [initial diagnostic](reports/development/two_tower_70_80_colab_diagnostic.md).
-
-Reports contain the dataset checksum, cutoffs, counts, metrics, popularity scores and per-user recommendations. Keep test results for reporting; use validation when choosing models and parameters.
-
-A fixed item-item cosine retrieval candidate was compared with popularity on temporal development windows. Earlier saved 50/60 and 60/70 reports used users selected for at least one future rating >=4. The corrected 60/70 run sampled 2,000 training-positive users with any observed rating in the held-out window (seed 42), including 30 users with no >=4 target. On all 2,000 users, ItemKNN vs popularity matched Recall@100 was 0.23527 vs 0.16095 (paired bootstrap difference +0.07439; 95% CI +0.06753 to +0.08139); matched NDCG@10 was 0.14733 vs 0.12411 (+0.02324; 95% CI +0.01596 to +0.03015). Matched Recall@10 difference was +0.00188 (95% CI -0.00317 to +0.00672), which does not establish a difference. The positive-target subgroup contains 1,970 users; catalog coverage for positive target pairs was 73.1%. This is still a reused development window: ItemKNN was selected after earlier results, so it is not independent confirmation. It measures retrieval only, not ranking, CTR, or online lift. The native API defaults to popularity when ItemKNN artifacts are not configured; Docker Compose configures the ItemKNN candidate. Corrected run details: [metrics](reports/development/itemknn-60-70-corrected-cohort-2k-v2/metrics.json); historical reports: [50/60](reports/development/itemknn-50-60-results-2026-11-05.md) and [60/70](reports/development/itemknn-60-70-replication-results-2026-11-05.md).
-
-## Next steps
-
-1. Keep the native API fallback as popularity when no ItemKNN artifact is configured. Docker Compose uses the evaluated ItemKNN artifact for liked-history recommendations, with popularity fallback. The development window was reused, so its measurements are not independent confirmation.
-2. Two candidate-conditioned DCN objectives were evaluated; neither beat the unchanged ItemKNN order, so neither is promoted. Keep the API on its current default until an alternative passes the same-candidate, paired evaluation gate. The official final 10% remains untouched.
-3. The Docker Compose `/health`, ItemKNN history path, explicit-genre path, and browser form were checked on 5 November 2026. The ItemKNN route works for this configured artifact; its validation panel was reused during development, so do not claim independent model validation.
-4. Redis was enabled in the checked Compose run. The full MovieLens Spark feature job passed in Linux with Spark 4.0.5; two Spark pytest write cases still fail when run on this Windows setup because Hadoop winutils.exe is missing. The Airflow 3 standalone runtime discovered the manual DAG with no import errors, and its preflight helper validated the actual dataset hash and split; no retraining task was run. The Triton CPU smoke passed; see [Triton notes](docs/triton.md). A/B code has synthetic checks only; real-user outcomes and CTR are unmeasured because MovieLens has no click/impression traffic.
-5. Complete the demo, architecture/data/API documentation, results, presentation and reflection after the measured pipeline is stable.
-
-The portal lists these integrations as required; the items above are not yet complete. A genuine online A/B test needs traffic and a defined measurement window. Offline MovieLens metrics must not be described as CTR.
-
-## Dataset usage note (checked against the downloaded README)
-
-The MovieLens 25M README requires acknowledgement, prohibits redistribution without separate permission, and requires permission for commercial or revenue-bearing use. Keep raw data out of the public submission folder; include the official download URL instead. Clarify any intended company deployment with the manager before moving beyond an educational research prototype.
-
-Dataset citation: F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems 5(4). https://doi.org/10.1145/2827872
-
-
-
-
-
-
+`airflow/dags/retrain_recommender.py`: `spark_features -> train_retrieval -> build_knn -> evaluate_candidate -> quality_gate -> build_bundle -> promote`. The gate blocks promotion if the candidate retriever's validation Recall@100 is more than 2% below production; promotion is an atomic symlink swap. Parameters (`data`, `work`, `epochs`, `per_epoch`, ...) are passed with `--conf`.
