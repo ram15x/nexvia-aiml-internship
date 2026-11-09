@@ -1,0 +1,23 @@
+{
+ "dcn": {
+  "users": 508,
+  "recall@10": 0.0838,
+  "ndcg@10": 0.184,
+  "latency_ms_cold_cache_p50": 10.6,
+  "latency_ms_cold_cache_p95": 15.8
+ },
+ "wide_deep": {
+  "users": 508,
+  "recall@10": 0.0825,
+  "ndcg@10": 0.1846,
+  "latency_ms_cold_cache_p50": 8.5,
+  "latency_ms_cold_cache_p95": 12.9
+ },
+ "redis_cached_p50_ms": 0.15,
+ "redis_cached_p95_ms": 0.2,
+ "cache": {
+  "hits": 508,
+  "misses": 1016,
+  "errors": 0
+ }
+}

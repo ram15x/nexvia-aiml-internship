@@ -1,0 +1,101 @@
+{
+ "users": 5083,
+ "flat_exact": {
+  "recall@100": 0.2323,
+  "ndcg@100": 0.1537,
+  "latency_ms_p50": 0.724,
+  "latency_ms_p99": 2.185,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0
+ },
+ "hnsw_ef16": {
+  "recall@100": 0.2321,
+  "ndcg@100": 0.1536,
+  "latency_ms_p50": 0.356,
+  "latency_ms_p99": 3.872,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0,
+  "with_exact_fallback": {
+   "recall@100": 0.2321,
+   "ndcg@100": 0.1536,
+   "latency_ms_p50": 0.369,
+   "latency_ms_p99": 3.978,
+   "users_needing_exact_fallback": 0,
+   "users_below_k_results": 0
+  },
+  "top100_overlap_with_exact": 0.9953,
+  "build_seconds": 2.12
+ },
+ "hnsw_ef32": {
+  "recall@100": 0.2321,
+  "ndcg@100": 0.1536,
+  "latency_ms_p50": 0.363,
+  "latency_ms_p99": 3.844,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0,
+  "with_exact_fallback": {
+   "recall@100": 0.2321,
+   "ndcg@100": 0.1536,
+   "latency_ms_p50": 0.377,
+   "latency_ms_p99": 4.004,
+   "users_needing_exact_fallback": 0,
+   "users_below_k_results": 0
+  },
+  "top100_overlap_with_exact": 0.9953,
+  "build_seconds": 2.19
+ },
+ "hnsw_ef64": {
+  "recall@100": 0.2321,
+  "ndcg@100": 0.1536,
+  "latency_ms_p50": 0.452,
+  "latency_ms_p99": 4.589,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0,
+  "with_exact_fallback": {
+   "recall@100": 0.2321,
+   "ndcg@100": 0.1536,
+   "latency_ms_p50": 0.486,
+   "latency_ms_p99": 4.684,
+   "users_needing_exact_fallback": 0,
+   "users_below_k_results": 0
+  },
+  "top100_overlap_with_exact": 0.9953,
+  "build_seconds": 2.42
+ },
+ "hnsw_ef128": {
+  "recall@100": 0.2321,
+  "ndcg@100": 0.1536,
+  "latency_ms_p50": 0.411,
+  "latency_ms_p99": 4.418,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0,
+  "with_exact_fallback": {
+   "recall@100": 0.2321,
+   "ndcg@100": 0.1536,
+   "latency_ms_p50": 0.421,
+   "latency_ms_p99": 4.392,
+   "users_needing_exact_fallback": 0,
+   "users_below_k_results": 0
+  },
+  "top100_overlap_with_exact": 0.9954,
+  "build_seconds": 2.2
+ },
+ "hnsw_ef256": {
+  "recall@100": 0.2322,
+  "ndcg@100": 0.1536,
+  "latency_ms_p50": 0.432,
+  "latency_ms_p99": 4.393,
+  "users_needing_exact_fallback": 0,
+  "users_below_k_results": 0,
+  "with_exact_fallback": {
+   "recall@100": 0.2322,
+   "ndcg@100": 0.1536,
+   "latency_ms_p50": 0.493,
+   "latency_ms_p99": 4.782,
+   "users_needing_exact_fallback": 0,
+   "users_below_k_results": 0
+  },
+  "top100_overlap_with_exact": 0.9965,
+  "build_seconds": 2.84
+ }
+}
