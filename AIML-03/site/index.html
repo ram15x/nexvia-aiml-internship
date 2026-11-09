@@ -73,11 +73,11 @@
         <h2>Results on the held-out test window</h2>
         <p class="muted">6,252 users, time-based split (train before 2016-06-25, test from 2018-01-04), test scored once with models frozen at the train cut-off.</p>
         <table><thead><tr><th>System</th><th>Recall@10</th><th>NDCG@10</th><th>Recall@100</th></tr></thead><tbody>
-<tr><td>Popularity</td><td>0.0260</td><td>0.0728</td><td>0.116</td></tr>
-<tr><td>Two-tower retriever alone</td><td>0.0328</td><td>0.0857</td><td>0.169</td></tr>
-<tr><td>Item-KNN alone</td><td>0.0411</td><td>0.1091</td><td>0.181</td></tr>
-<tr><td>Full system, DCN-v2 ranker</td><td>0.0514</td><td>0.1272</td><td>0.210</td></tr>
-<tr><td>Full system, Wide &amp; Deep ranker</td><td>0.0509</td><td>0.1273</td><td>0.210</td></tr>
+<tr><td>Popularity</td><td>0.0260</td><td>0.0728</td><td>0.1160</td></tr>
+<tr><td>Two-tower retriever alone</td><td>0.0328</td><td>0.0857</td><td>0.1690</td></tr>
+<tr><td>Item-KNN alone</td><td>0.0411</td><td>0.1091</td><td>0.1815</td></tr>
+<tr><td>Full system, DCN-v2 ranker</td><td>0.0514</td><td>0.1272</td><td>0.2099</td></tr>
+<tr><td>Full system, Wide &amp; Deep ranker</td><td>0.0509</td><td>0.1273</td><td>0.2105</td></tr>
         </tbody></table>
         <ul class="plain">
           <li><strong>The full system beats the best single retriever</strong> by +0.018 NDCG@10 (95% CI +0.015 to +0.021). On validation the gap was larger (+0.049); part of that was specific to the validation window.</li>

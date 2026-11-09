@@ -10,11 +10,11 @@ Everything is measured with a **time split** (train < 2016-06-25 < validation < 
 
 | System (test window) | Recall@10 | NDCG@10 | Recall@100 |
 |---|---|---|---|
-| Popularity | 0.0260 | 0.0728 | 0.116 |
-| Two-tower retriever alone | 0.0328 | 0.0857 | 0.169 |
-| Item-KNN alone | 0.0411 | 0.1091 | 0.182 |
-| **Full system, DCN-v2 ranker** | **0.0514** | **0.1272** | **0.210** |
-| Full system, Wide & Deep ranker | 0.0509 | 0.1273 | 0.211 |
+| Popularity | 0.0260 | 0.0728 | 0.1160 |
+| Two-tower retriever alone | 0.0328 | 0.0857 | 0.1690 |
+| Item-KNN alone | 0.0411 | 0.1091 | 0.1815 |
+| **Full system, DCN-v2 ranker** | **0.0514** | **0.1272** | **0.2099** |
+| Full system, Wide & Deep ranker | 0.0509 | 0.1273 | 0.2105 |
 
 - The full system beats the strongest single retriever by **+0.018 NDCG@10** (95% CI 0.015 to 0.021) and popularity by +0.054.
 - DCN-v2 and Wide & Deep are **statistically tied** (NDCG@10 difference -0.0001, CI -0.0014 to +0.0011).

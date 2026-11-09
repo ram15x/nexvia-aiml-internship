@@ -5,7 +5,7 @@ from pathlib import Path
 t = json.loads(Path("results/final_test.json").read_text()); css = Path("scripts/site_style.css").read_text()
 sy, pd_, ab = t["systems"], t["paired"], t["ab_replay"]
 names = [("popularity", "Popularity"), ("two_tower", "Two-tower retriever alone"), ("itemknn", "Item-KNN alone"), ("dcn", "Full system, DCN-v2 ranker"), ("wide_deep", "Full system, Wide &amp; Deep ranker")]
-rows = "\n".join(f"<tr><td>{n}</td><td>{sy[k]['recall@10']['mean']:.4f}</td><td>{sy[k]['ndcg@10']['mean']:.4f}</td><td>{sy[k]['recall@100']['mean']:.3f}</td></tr>" for k, n in names)
+rows = "\n".join(f"<tr><td>{n}</td><td>{sy[k]['recall@10']['mean']:.4f}</td><td>{sy[k]['ndcg@10']['mean']:.4f}</td><td>{sy[k]['recall@100']['mean']:.4f}</td></tr>" for k, n in names)
 d = pd_["dcn_minus_itemknn"]["ndcg@10"]; dw = pd_["dcn_minus_wide_deep"]["ndcg@10"]
 html = f"""<!doctype html>
 <html lang="en">
