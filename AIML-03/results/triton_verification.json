@@ -44,5 +44,31 @@
   "dcn_ranker": 148,
   "wide_deep_ranker": 43
  },
- "not_covered": "the FastAPI service was not run with TRITON_URL against this server"
+ "not_covered": "the FastAPI service was not run with TRITON_URL against this server",
+ "real_feature_parity": {
+  "probe_file": "results/triton_probe_real.json",
+  "what": "250 real candidate rows (52 dense features) for each of 3 users, per ranker, built by the bundle's own serving code, sent to Triton over HTTP",
+  "max_abs_logit_difference": {
+   "dcn_ranker": 9.54e-07,
+   "wide_deep_ranker": 0.0
+  },
+  "top10_identical_in_all_6_cases": true,
+  "latency_ms_250_rows_per_request": {
+   "note": "60 sequential HTTP requests per case, measured from a browser on the same laptop (Docker Desktop, CPU); includes JSON encoding; first requests after load were slower (p95 up to 49 ms)",
+   "dcn_ranker_p50": [
+    5.8,
+    5.2,
+    5.0
+   ],
+   "wide_deep_ranker_p50": [
+    5.4,
+    5.3,
+    4.8
+   ],
+   "p95_steady_state_range": [
+    5.3,
+    6.4
+   ]
+  }
+ }
 }
