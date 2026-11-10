@@ -6,13 +6,14 @@
 - `rec.triton_client.TritonRanker` calls Triton's HTTP v2 inference endpoint. `Recommender(..., triton_url=...)`, or the `TRITON_URL` env var for the API, switches ranking from in-process to Triton.
 - The client is tested against a local stub that implements the v2 protocol around the same SavedModel (`tests/test_triton_client.py`): request and response shapes and values match the in-process ranker to 1e-5.
 
-**What has NOT been verified here**
-A real Triton container has not loaded these models in the workspace where this was built (no Docker daemon, no access to NVIDIA's registry). Before relying on it, run:
+**Verified on a real server (2026-11-10)**
+`docker compose --profile triton up -d triton` pulled `nvcr.io/nvidia/tritonserver:24.08-py3` and loaded both models on CPU: the model table shows `dcn_ranker` and `wide_deep_ranker` as `READY`, `/v2/health/ready` returns 200, and `/v2/models/dcn_ranker` returns the input/output metadata above. A five-row probe sent to `/v2/models/<name>/infer` returned logits identical to the in-process SavedModels to five decimals for both models (`results/triton_verification.json`).
+
+**Not covered**
+The FastAPI service has not been run with `TRITON_URL` pointing at that server (that path is tested against a protocol stub), and Triton latency has not been benchmarked. To check the API path:
 
 ```bash
 docker compose --profile triton up -d triton
-curl -s localhost:8100/v2/health/ready                      # expect HTTP 200
-curl -s localhost:8100/v2/models/dcn_ranker                 # expect the input/output metadata above
 TRITON_URL=http://localhost:8100 BUNDLE=./bundle python -m pytest tests/test_api.py
 ```
-Triton's TensorFlow backend was deprecated in release 25.03 (25.02 is the last release that ships it), so keep the image tag at or below 25.02; `docker-compose.yml` uses `24.08-py3`. If the model fails to load, the likely culprit is the TensorFlow version inside the Triton image versus TensorFlow 2.21 that exported the SavedModel; pick a Triton release whose TensorFlow backend can read it, or re-export with `tf.saved_model.save` under that version.
+Triton's TensorFlow backend was deprecated in release 25.03 (25.02 is the last release that ships it), so keep the image tag at or below 25.02; `docker-compose.yml` uses `24.08-py3`, which loads the TensorFlow 2.21 exports without changes. If a different image fails to load them, the likely culprit is the TensorFlow version inside the Triton image versus TensorFlow 2.21 that exported the SavedModel; pick a Triton release whose TensorFlow backend can read it, or re-export with `tf.saved_model.save` under that version.

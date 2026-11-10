@@ -1,0 +1,48 @@
+{
+ "date": "2026-11-10",
+ "server": "nvcr.io/nvidia/tritonserver:24.08-py3 (Triton 2.49.0, CPU, TensorFlow backend)",
+ "models_ready": [
+  "dcn_ranker",
+  "wide_deep_ranker"
+ ],
+ "health_ready_http": 200,
+ "probe": "5 candidate rows, dense[i][j]=round(sin(52*i+j+1),6), year=[6,1,5,0,5], pop=[7,5,2,6,2]",
+ "triton_http_logits": {
+  "dcn_ranker": [
+   -9.85373,
+   -11.34722,
+   -12.10212,
+   -10.3605,
+   -11.98233
+  ],
+  "wide_deep_ranker": [
+   -11.36909,
+   -8.00415,
+   -15.83279,
+   -10.40634,
+   -12.80359
+  ]
+ },
+ "in_process_savedmodel_logits": {
+  "dcn_ranker": [
+   -9.85373,
+   -11.34722,
+   -12.10212,
+   -10.3605,
+   -11.98233
+  ],
+  "wide_deep_ranker": [
+   -11.36909,
+   -8.00415,
+   -15.83279,
+   -10.40634,
+   -12.80359
+  ]
+ },
+ "match_to_5_decimals": true,
+ "latency_ms_first_request_5_rows": {
+  "dcn_ranker": 148,
+  "wide_deep_ranker": 43
+ },
+ "not_covered": "the FastAPI service was not run with TRITON_URL against this server"
+}

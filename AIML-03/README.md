@@ -51,7 +51,7 @@ Full tables, validation numbers and cold-start cohorts are in [`docs/results.md`
 | Airflow retraining | Executed end to end with Airflow 3.1.8, including one run the quality gate blocked and one it promoted (`results/airflow_runs.json`). |
 | Live demo | Running on Hugging Face Spaces. |
 | A/B testing | Assignment, logging and statistics are implemented and exercised with a simulated replay of held-out likes (CTR 5.43% vs 5.47%, p = 0.85). Real click data would come from live traffic. |
-| Triton serving | Model repository, SavedModels and HTTP client are ready and tested against a protocol stub. Running them on a real Triton server is the next step; see [`docs/triton.md`](docs/triton.md). |
+| Triton serving | Both rankers load and serve on a real Triton 24.08 server (CPU). Scores returned over its HTTP API match the in-process models to five decimals (`results/triton_verification.json`). The API's `TRITON_URL` switch is covered by protocol-stub tests; see [`docs/triton.md`](docs/triton.md). |
 
 ## Scope notes
 

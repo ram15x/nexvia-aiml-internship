@@ -31,7 +31,7 @@ function callout(s, text, o, color = C.amber) {
   s.addText("Large-Scale Personalised\nRecommendation Engine", { x: 0.8, y: 1.7, w: 11.5, h: 2.1, fontFace: HF, fontSize: 46, bold: true, color: C.white, margin: 0, valign: "top" });
   s.addText("AIML-03  ·  Nexvia AI/ML Internship Capstone", { x: 0.8, y: 4.0, w: 11, h: 0.5, fontFace: BF, fontSize: 20, color: C.teal2, margin: 0 });
   s.addText("Ramnarayanan M  ·  November 2026", { x: 0.8, y: 4.6, w: 11, h: 0.4, fontFace: BF, fontSize: 16, color: "C9D6D8", margin: 0 });
-  s.addText("MovieLens 25M · TensorFlow Recommenders · FAISS · Spark · Redis · FastAPI · Airflow · Triton-ready", { x: 0.8, y: 6.4, w: 12, h: 0.4, fontFace: BF, fontSize: 13, color: C.teal2, margin: 0 }); }
+  s.addText("MovieLens 25M · TensorFlow Recommenders · FAISS · Spark · Redis · FastAPI · Airflow · Triton", { x: 0.8, y: 6.4, w: 12, h: 0.4, fontFace: BF, fontSize: 13, color: C.teal2, margin: 0 }); }
 
 // 2 ─ problem
 { const s = base("Choose 10 films from 34,461 for each person", "The funnel: a cheap method narrows 34 thousand films to 250, an expensive model orders those. Brand-new users have no history, so they need a separate fallback.");
@@ -51,7 +51,7 @@ function callout(s, text, o, color = C.amber) {
 // 4 ─ architecture
 { const s = base("Architecture", "Offline on the left: Spark, training, a quality gate, bundle build. Online on the right: the API checks the Redis cache, routes cold-start users to popularity, and otherwise builds 250 candidates from two sources and re-ranks them.");
   s.addImage({ path: "docs/architecture.png", x: 6.6, y: 0.2, h: 6.9, w: 6.9 * 2918 / 2990 });
-  bullets(s, ["Offline (weekly Airflow DAG): Spark tables, two-tower training, item-KNN, a validation gate, then the bundle build that trains the rankers.", "Online: FastAPI with a Redis response cache; personalised path = FAISS HNSW two-tower candidates + item-KNN candidates, re-ranked by DCN-v2 or Wide & Deep.", "Rankers are exported as TensorFlow SavedModels, ready for Triton."], { x: 0.6, y: 1.55, w: 5.7, h: 5.0 });
+  bullets(s, ["Offline (weekly Airflow DAG): Spark tables, two-tower training, item-KNN, a validation gate, then the bundle build that trains the rankers.", "Online: FastAPI with a Redis response cache; personalised path = FAISS HNSW two-tower candidates + item-KNN candidates, re-ranked by DCN-v2 or Wide & Deep.", "Rankers are exported as TensorFlow SavedModels and served on Triton."], { x: 0.6, y: 1.55, w: 5.7, h: 5.0 });
   foot(s, 4); }
 
 // 5 ─ retrieval
@@ -91,10 +91,10 @@ function callout(s, text, o, color = C.amber) {
 
 // 9 ─ MLOps
 { const ab = test.ab_replay;
-  const s = base("MLOps: what is proven and what is not", "Three pieces. Airflow actually ran end to end, including a run that failed on a real bug and a run where the gate correctly blocked a weak model. The A/B test is a replay of held-out data, not live traffic. Triton: the model files are verified, but I have not yet started a real Triton server.");
+  const s = base("MLOps: what is proven and what is not", "Three pieces. Airflow actually ran end to end, including a run that failed on a real bug and a run where the gate correctly blocked a weak model. The A/B test is a replay of held-out data, not live traffic. Triton: both rankers run on a real Triton server and match the in-process scores.");
   const cols = [["Airflow DAG", C.teal, ["Executed end to end with Airflow 3.", "Run 1 failed on a real bug I then fixed.", "Weak candidate: gate said BLOCK (Recall@100 0.146 vs 0.232); promote skipped.", "Full run: gate said PROMOTE (0.236 vs 0.232); new bundle serves requests."]],
     ["A/B test (simulated)", C.amber, [`Control DCN-v2 ${(ab.control_dcn.ctr * 100).toFixed(2)}% vs treatment Wide & Deep ${(ab.treatment_wide_deep.ctr * 100).toFixed(2)}% CTR.`, `p = ${ab.p_value_two_sided}: no difference, as expected from the offline tie.`, "Replay of held-out likes with position-based clicks, not live traffic."]],
-    ["Triton", C.red, ["SavedModels export exactly (max score difference 0.0).", "Model repository and HTTP client written; client tested against a local protocol stub.", "NOT yet run on a real Triton server: needs Docker. Steps are in docs/triton.md."]]];
+    ["Triton", C.teal, ["SavedModels export exactly (max score difference 0.0).", "Real Triton 24.08 server: both models READY, health 200.", "HTTP scores match in-process to 5 decimals. Full API path not yet run against it."]]];
   cols.forEach((c, i) => { const x = 0.6 + i * 4.15; s.addShape(pptx.ShapeType.rect, { x, y: 1.55, w: 3.95, h: 0.55, fill: { color: c[1] }, line: { color: c[1] } });
     s.addText(c[0], { x, y: 1.55, w: 3.95, h: 0.55, fontFace: HF, fontSize: 17, bold: true, color: C.white, align: "center", valign: "middle", margin: 0 });
     s.addShape(pptx.ShapeType.rect, { x, y: 2.1, w: 3.95, h: 4.3, fill: { color: "FFFFFF" }, line: { color: C.grid } });
@@ -103,7 +103,7 @@ function callout(s, text, o, color = C.amber) {
 
 // 10 ─ limits & next
 { const s = base("Limits, and what I would do next", "I want to be straight about the limits. The most important: the A/B is simulated, the two-tower alone does not beat a classical baseline, and for users with very little history the system is no better than popularity as far as I can measure. Then the reflection, in my own words.");
-  bullets(s, ["The ranker's gain shrank from +0.049 (validation) to +0.018 (test): part of it was window-specific.", "The two-tower alone is below item-KNN; it earns its place through candidate diversity.", "Users with 1 to 4 likes: only 55 validation users have relevant items, too few to say whether personalisation beats popularity.", "Click-through is simulated; MovieLens has no impressions or clicks.", "Next: run Triton for real, train on newer data, add features like recency and a proper click log."], { x: 0.6, y: 1.5, w: 7.2, h: 5.2, fontSize: 15 });
+  bullets(s, ["The ranker's gain shrank from +0.049 (validation) to +0.018 (test): part of it was window-specific.", "The two-tower alone is below item-KNN; it earns its place through candidate diversity.", "Users with 1 to 4 likes: only 55 validation users have relevant items, too few to say whether personalisation beats popularity.", "Click-through is simulated; MovieLens has no impressions or clicks.", "Next: run the full API against Triton and benchmark it, train on newer data, add features like recency and a proper click log."], { x: 0.6, y: 1.5, w: 7.2, h: 5.2, fontSize: 15 });
   callout(s, "[Your words: what you learned, what surprised you, what you would do differently.]", { x: 8.2, y: 1.6, w: 4.6, h: 2.4 }, C.teal);
   s.addText("Repository, README, architecture and results: github.com/ram15x/personalized-recommendation-engine", { x: 8.2, y: 4.4, w: 4.6, h: 1.0, fontFace: BF, fontSize: 13, color: C.mute, margin: 0, valign: "top" });
   foot(s, 10); }
