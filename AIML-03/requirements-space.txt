@@ -1,8 +1,8 @@
-# Runtime packages for the hosted demo (same pins as requirements.txt, without Spark, Airflow or the API server)
-numpy==2.5.4
-pandas==3.1.1
-scipy==1.18.1
-pyarrow
+# Runtime packages for the hosted demo (Python 3.10 to 3.13). Same ranked output as the full environment was checked on Python 3.10 (see docs/deploy_space.md)
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.15.3
+pyarrow==25.0.1
 tensorflow==2.21.0
 tf-keras==2.21.0
 tensorflow-recommenders==0.7.7

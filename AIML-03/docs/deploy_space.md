@@ -1,6 +1,6 @@
 # Hosting the demo (Hugging Face Space)
 
-The hosted demo is the Gradio app in `demo/app.py`, running the real `Recommender` (no mocked output) in a Docker Space on the free CPU tier.
+The hosted demo is the Gradio app in `demo/app.py`, running the real `Recommender` (no mocked output) in a  on the free CPU tier.
 
 **What is deployed**
 - `deploy/space/Dockerfile` clones this repository (`src/`, `demo/`, `requirements-space.txt`) and the `demo-bundle` branch, installs the pinned packages, and starts the app on port 7860.
