@@ -9,7 +9,7 @@ services:
     depends_on: [redis]
     environment:
       REDIS_URL: redis://redis:6379/0
-      # TRITON_URL: http://triton:8000      # uncomment together with the triton profile to score on Triton
+      TRITON_URL: ${TRITON_URL:-}          # e.g. TRITON_URL=http://triton:8000 with --profile triton; empty = in-process ranking
     volumes: ["./bundle:/bundle:ro"]
     ports: ["8000:8000"]
   triton:
