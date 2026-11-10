@@ -70,8 +70,8 @@ def main() -> int:
     after = {m: triton_count(a.triton, m) for m in before}
     served = {m: after[m] - before[m] for m in before}
     check("Triton's own counters show it scored the candidates", all(served[m] > 0 for m in served if n_by_model[m] > 0),
-          f"rows scored: {served}; uncached requests: {n_by_model}")
-    rep["triton_rows_scored"] = served
+          f"Triton inference requests: {served}; uncached requests: {n_by_model}")
+    rep["triton_inference_requests"] = served
 
     s1, first = call("POST", a.api + "/recommend", exp["requests"][0]["body"])
     check("repeat request is served from the Redis cache", first.get("cache") == "hit", f"cache={first.get('cache')}, {first.get('latency_ms')} ms")

@@ -1,0 +1,73 @@
+{
+ "started_utc": "2026-11-10T11:51:50Z",
+ "checks": [
+  {
+   "check": "API reports Triton as its ranker backend",
+   "ok": true,
+   "detail": "triton"
+  },
+  {
+   "check": "Triton is ready",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "all API answers have the same top-10 as the in-process rankers",
+   "ok": true,
+   "detail": "11/11 identical"
+  },
+  {
+   "check": "scores equal the in-process scores",
+   "ok": true,
+   "detail": "max |diff| 0.00e+00"
+  },
+  {
+   "check": "Triton's own counters show it scored the candidates",
+   "ok": true,
+   "detail": "Triton inference requests: {'dcn_ranker': 5, 'wide_deep_ranker': 6}; uncached requests: {'dcn_ranker': 5, 'wide_deep_ranker': 6}"
+  },
+  {
+   "check": "repeat request is served from the Redis cache",
+   "ok": true,
+   "detail": "cache=hit, 0.43 ms"
+  },
+  {
+   "check": "uncached requests succeed through Triton",
+   "ok": true,
+   "detail": "{\"n\": 40, \"p50\": 13.4, \"p95\": 17.3, \"end_to_end_p50\": 22.0}"
+  },
+  {
+   "check": "cold-start route still answers",
+   "ok": true,
+   "detail": "cold_start_popularity_genre"
+  }
+ ],
+ "health": {
+  "status": "ok",
+  "model_version": "v1",
+  "rankers": [
+   "dcn",
+   "wide_deep"
+  ],
+  "catalog_items": 34461,
+  "cache": {
+   "hits": 0,
+   "misses": 0,
+   "errors": 0
+  },
+  "ranker_backend": "triton"
+ },
+ "max_score_difference": 0.0,
+ "uncached_latency_ms": {
+  "n": 40,
+  "p50": 13.4,
+  "p95": 17.3,
+  "end_to_end_p50": 22.0
+ },
+ "finished_utc": "2026-11-10T11:51:58Z",
+ "all_passed": true,
+ "triton_inference_requests": {
+  "dcn_ranker": 5,
+  "wide_deep_ranker": 6
+ }
+}

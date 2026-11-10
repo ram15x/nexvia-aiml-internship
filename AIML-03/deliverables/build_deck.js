@@ -91,10 +91,10 @@ function callout(s, text, o, color = C.amber) {
 
 // 9 ─ MLOps
 { const ab = test.ab_replay;
-  const s = base("MLOps: what is proven and what is not", "Three pieces. Airflow actually ran end to end, including a run that failed on a real bug and a run where the gate correctly blocked a weak model. The A/B test is a replay of held-out data, not live traffic. Triton: both rankers run on a real Triton server and match the in-process scores.");
+  const s = base("MLOps: what is proven and what is not", "Three pieces. Airflow actually ran end to end, including a run that failed on a real bug and a run where the gate correctly blocked a weak model. The A/B test is a replay of held-out data, not live traffic. Triton: the full API ran on a real Triton server with Redis and returned the same recommendations as in-process ranking.");
   const cols = [["Airflow DAG", C.teal, ["Executed end to end with Airflow 3.", "Run 1 failed on a real bug I then fixed.", "Weak candidate: gate said BLOCK (Recall@100 0.146 vs 0.232); promote skipped.", "Full run: gate said PROMOTE (0.236 vs 0.232); new bundle serves requests."]],
     ["A/B test (simulated)", C.amber, [`Control DCN-v2 ${(ab.control_dcn.ctr * 100).toFixed(2)}% vs treatment Wide & Deep ${(ab.treatment_wide_deep.ctr * 100).toFixed(2)}% CTR.`, `p = ${ab.p_value_two_sided}: no difference, as expected from the offline tie.`, "Replay of held-out likes with position-based clicks, not live traffic."]],
-    ["Triton", C.teal, ["SavedModels export exactly (max score difference 0.0).", "Real Triton 24.08 server: both models READY, health 200.", "HTTP scores match in-process to 5 decimals. Full API path not yet run against it."]]];
+    ["Triton", C.teal, ["SavedModels export exactly (max score difference 0.0).", "Real Triton 24.08 server: both models READY, health 200.", "Full API on Triton + Redis: 11/11 answers identical; median 13.4 ms uncached, 0.4 ms cached."]]];
   cols.forEach((c, i) => { const x = 0.6 + i * 4.15; s.addShape(pptx.ShapeType.rect, { x, y: 1.55, w: 3.95, h: 0.55, fill: { color: c[1] }, line: { color: c[1] } });
     s.addText(c[0], { x, y: 1.55, w: 3.95, h: 0.55, fontFace: HF, fontSize: 17, bold: true, color: C.white, align: "center", valign: "middle", margin: 0 });
     s.addShape(pptx.ShapeType.rect, { x, y: 2.1, w: 3.95, h: 4.3, fill: { color: "FFFFFF" }, line: { color: C.grid } });
@@ -103,7 +103,7 @@ function callout(s, text, o, color = C.amber) {
 
 // 10 ─ limits & next
 { const s = base("Limits, and what I would do next", "I want to be straight about the limits. The most important: the A/B is simulated, the two-tower alone does not beat a classical baseline, and for users with very little history the system is no better than popularity as far as I can measure. Then the reflection, in my own words.");
-  bullets(s, ["The ranker's gain shrank from +0.049 (validation) to +0.018 (test): part of it was window-specific.", "The two-tower alone is below item-KNN; it earns its place through candidate diversity.", "Users with 1 to 4 likes: only 55 validation users have relevant items, too few to say whether personalisation beats popularity.", "Click-through is simulated; MovieLens has no impressions or clicks.", "Next: run the full API against Triton and benchmark it, train on newer data, add features like recency and a proper click log."], { x: 0.6, y: 1.5, w: 7.2, h: 5.2, fontSize: 15 });
+  bullets(s, ["The ranker's gain shrank from +0.049 (validation) to +0.018 (test): part of it was window-specific.", "The two-tower alone is below item-KNN; it earns its place through candidate diversity.", "Users with 1 to 4 likes: only 55 validation users have relevant items, too few to say whether personalisation beats popularity.", "Click-through is simulated; MovieLens has no impressions or clicks.", "Next: load-test Triton, train on newer data, add features like recency and a proper click log."], { x: 0.6, y: 1.5, w: 7.2, h: 5.2, fontSize: 15 });
   callout(s, "[Your words: what you learned, what surprised you, what you would do differently.]", { x: 8.2, y: 1.6, w: 4.6, h: 2.4 }, C.teal);
   s.addText("Repository, README, architecture and results: github.com/ram15x/personalized-recommendation-engine", { x: 8.2, y: 4.4, w: 4.6, h: 1.0, fontFace: BF, fontSize: 13, color: C.mute, margin: 0, valign: "top" });
   foot(s, 10); }
