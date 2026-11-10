@@ -15,4 +15,4 @@ curl -s localhost:8100/v2/health/ready                      # expect HTTP 200
 curl -s localhost:8100/v2/models/dcn_ranker                 # expect the input/output metadata above
 TRITON_URL=http://localhost:8100 BUNDLE=./bundle python -m pytest tests/test_api.py
 ```
-If the model fails to load, the likely culprit is the TensorFlow version inside the Triton image versus TensorFlow 2.21 that exported the SavedModel; pick a Triton release whose TensorFlow backend can read it, or re-export with `tf.saved_model.save` under that version.
+Triton's TensorFlow backend was deprecated in release 25.03 (25.02 is the last release that ships it), so keep the image tag at or below 25.02; `docker-compose.yml` uses `24.08-py3`. If the model fails to load, the likely culprit is the TensorFlow version inside the Triton image versus TensorFlow 2.21 that exported the SavedModel; pick a Triton release whose TensorFlow backend can read it, or re-export with `tf.saved_model.save` under that version.
