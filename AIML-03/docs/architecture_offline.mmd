@@ -1,0 +1,14 @@
+flowchart LR
+  subgraph OFFLINE["Offline pipeline (Airflow DAG, weekly)"]
+    direction LR
+    R[("MovieLens 25M<br/>25.0M ratings")] --> S["Spark<br/>time-safe tables:<br/>interactions, user/item stats,<br/>user history, rated items"]
+    S --> TT["Two-tower training<br/>(TensorFlow Recommenders)"]
+    S --> KNN["Item-KNN<br/>neighbour matrix"]
+    TT --> EV["Evaluate retriever<br/>on validation users"]
+    EV --> GATE{"Quality gate:<br/>Recall@100 vs production"}
+    GATE -- fail --> X["Stop, keep production"]
+    GATE -- pass --> B["Build bundle:<br/>train DCN-v2 and Wide and Deep<br/>on two-source candidates,<br/>export SavedModels"]
+    KNN --> B
+    S --> B
+    B --> P[("Versioned bundle<br/>atomic symlink promote")]
+  end

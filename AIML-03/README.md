@@ -4,11 +4,17 @@ A production-style, two-stage recommender built on **MovieLens 25M** (25 million
 
 Built for the Nexvia AI/ML Internship capstone (AIML-03).
 
-**[Try the live demo](https://huggingface.co/spaces/Ram15x/movie-recommender)** · **[Project page](https://ram15x.github.io/personalized-recommendation-engine/)** · [Results](docs/results.md) · [Architecture](docs/architecture.png)
+**[Try the live demo](https://huggingface.co/spaces/Ram15x/movie-recommender)** · **[Project page](https://ram15x.github.io/personalized-recommendation-engine/)** · [Results](docs/results.md) · [Architecture](docs/architecture_online.png)
 
 The demo runs on Hugging Face's free tier, so it can take a few minutes to wake up. Pick a few films you like and it returns ranked suggestions from the real model, or leave the picker empty to see the cold-start fallback.
 
-![Architecture](docs/architecture.png)
+**Offline pipeline (weekly Airflow DAG)**
+
+![Offline pipeline](docs/architecture_offline.png)
+
+**Online serving**
+
+![Online serving](docs/architecture_online.png)
 
 ## How it works
 
