@@ -78,7 +78,7 @@ function callout(s, text, o, color = C.amber) {
     { x: 0.5, y: 1.5, w: 6.9, h: 4.6, barDir: "col", chartColors: [C.teal], showValue: true, dataLabelFormatCode: "0.000", dataLabelFontSize: 12, valAxisHidden: true, valGridLine: { style: "none" }, catAxisLabelFontSize: 12, showTitle: true, title: `Test NDCG@10, ${test.users.toLocaleString()} users`, titleFontSize: 13, titleColor: C.mute });
   const d = p.dcn_minus_itemknn["ndcg@10"], dw = p["dcn_minus_wide_deep"]["ndcg@10"];
   bullets(s, [`DCN-v2 vs item-KNN: +${f3(d.mean)} NDCG@10 (95% CI ${f3(d.ci95[0])} to ${f3(d.ci95[1])}). On validation the gap was +0.049.`, `DCN-v2 vs Wide & Deep: ${dw.mean.toFixed(4)} (CI ${dw.ci95[0].toFixed(4)} to ${dw.ci95[1].toFixed(4)}): a tie.`, `Recall@100: ${f3(sy.dcn["recall@100"].mean)} for DCN-v2 against ${f3(sy.itemknn["recall@100"].mean)} for item-KNN and ${f3(sy.popularity["recall@100"].mean)} for popularity.`], { x: 7.7, y: 1.5, w: 5.1, h: 3.3, fontSize: 15 });
-  callout(s, "Scores are lower than validation because the models are 18 months stale at test time; weekly retraining is what the Airflow DAG is for.", { x: 7.7, y: 4.95, w: 5.1, h: 1.35 });
+  callout(s, "Scores are lower than on validation. A likely factor is that the models are 18 months stale at test time, but I did not isolate it (the user groups also differ). Weekly retraining is what the Airflow DAG is for.", { x: 7.7, y: 4.95, w: 5.1, h: 1.35 });
   foot(s, 7); }
 
 // 8 ─ serving
