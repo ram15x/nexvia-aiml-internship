@@ -1,7 +1,7 @@
 """Interactive demo of the recommender (Gradio). Runs the real Recommender on a bundle; no mocked output.
 
   BUNDLE=./bundle python demo/app.py            # local
-  (the Hugging Face Space copy ships a trimmed bundle; see docs/deploy_space.md)
+  (the hosted copy ships a trimmed bundle without user histories; see docs/deploy_space.md)
 """
 import os
 import sys

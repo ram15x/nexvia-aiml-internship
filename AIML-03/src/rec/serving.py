@@ -49,7 +49,8 @@ class Recommender:
         self.tower.load_weights(str(b / "two_tower_weights")).expect_partial()
         s = np.load(b / "stats.npz"); self.stats = Stats(**{f: s[f] for f in s.files})
         self.global_user = (float(self.stats.user_mean[self.stats.user_n > 0].mean()), float(self.stats.user_pos_rate[self.stats.user_n > 0].mean()))
-        self.store = HistoryStore.from_spark(b / "features", self.cat)
+        # per-user history tables are optional: a bundle without them (the public demo ships none) serves anonymous requests only
+        self.store = HistoryStore.from_spark(b / "features", self.cat) if (b / "features").is_dir() else HistoryStore({}, {})
         self.n_dense = self.manifest["n_dense"]
         self.rankers = {n: load_ranker(n, b / "rankers" / n / "weights", self.n_dense) for n in self.manifest["rankers"]}
         self.lookup = np.zeros(int(ids.max()) + 1, np.int32); self.lookup[ids[1:]] = np.arange(1, len(ids))
