@@ -69,7 +69,7 @@ The local MovieLens 25M `ratings.csv` is 678,260,987 bytes. A separate 2.8 MB `m
 
 ## What is missing or not established
 
-- **GitHub/source-control sync:** local `main` tracks `origin/main` at [ram15x/personalized-recommendation-engine](https://github.com/ram15x/personalized-recommendation-engine). Raw MovieLens data, checkpoints, indexes, and per-user exports are not published.
+- **GitHub/source-control sync:** local `main` tracks `origin/main` at [ram15x/personalized-recommendation-engine](https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-03). Raw MovieLens data, checkpoints, indexes, and per-user exports are not published.
 - **Spark:** the bounded feature-table job and pinned dependency file were exercised on the full local MovieLens 25M source with Spark 4.0.5 on Linux. Windows pytest still reports two Parquet writer failures because `winutils.exe` is unavailable. The job does not replace the existing pandas/Colab modeling pipeline.
 - **Feature-based retrieval:** the existing towers use user and item ID embeddings. Movie genre/content features are not part of the current model.
 - **Candidate-stage quality:** neural retrieval/BPR candidates remained below popularity on the measured warm-user comparisons. In the corrected 2,000-user 60/70 sample, ItemKNN's matched Recall@100 and NDCG@10 paired intervals were above popularity; the Recall@10 interval crossed zero. The temporal window has been reused and ItemKNN was selected after earlier results, so this is development evidence, not independent confirmation.

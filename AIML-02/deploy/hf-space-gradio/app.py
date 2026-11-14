@@ -60,7 +60,7 @@ with gr.Blocks(title="Medical Imaging AI Review Platform") as demo:
             axial = gr.Image(label="Axial", type="pil")
         info = gr.Textbox(label="Output", interactive=False)
         ct_button.click(segment, inputs=volume, outputs=[sagittal, coronal, axial, info], time_limit=60)
-    gr.Markdown("This hosted copy runs the same model code as the local React/FastAPI app, but shows only the chest X-ray scores and the spleen segmentation. Grad-CAM, SHAP, the review log, the Q&A panel and Orthanc are in the local app. The chest X-ray model scores 0.797 macro AUROC on 999 NIH images; the spleen model scores a mean Dice of 0.877 on 6 held-out CT cases (0.715 before the largest-blob clean-up, which was chosen on validation cases and applied after a first test run). Both are small samples. [Project repository](https://github.com/ram15x/nexvia-aiml-02-medical-imaging)")
+    gr.Markdown("This hosted copy runs the same model code as the local React/FastAPI app, but shows only the chest X-ray scores and the spleen segmentation. Grad-CAM, SHAP, the review log, the Q&A panel and Orthanc are in the local app. The chest X-ray model scores 0.797 macro AUROC on 999 NIH images; the spleen model scores a mean Dice of 0.877 on 6 held-out CT cases (0.715 before the largest-blob clean-up, which was chosen on validation cases and applied after a first test run). Both are small samples. [Project repository](https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-02)")
 
 if __name__ == "__main__":
     demo.queue(default_concurrency_limit=1).launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", "7860")), max_file_size="128mb")

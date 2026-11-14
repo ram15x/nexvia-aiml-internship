@@ -46,7 +46,7 @@
   <div class="wrap">
     <header>
       <div class="brand">Recommendation Systems · AIML-03</div>
-      <nav aria-label="Main navigation"><a href="#system">System</a><a href="#results">Results</a><a href="#limits">Scope</a><a href="https://huggingface.co/spaces/Ram15x/movie-recommender">Live demo</a><a href="https://github.com/ram15x/personalized-recommendation-engine">Source</a></nav>
+      <nav aria-label="Main navigation"><a href="#system">System</a><a href="#results">Results</a><a href="#limits">Scope</a><a href="https://huggingface.co/spaces/Ram15x/movie-recommender">Live demo</a><a href="https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-03">Source</a></nav>
     </header>
     <main>
       <section class="hero">
@@ -55,8 +55,8 @@
         <p class="lead">Two candidate generators (a TensorFlow Recommenders two-tower model indexed in FAISS, and item-based collaborative filtering) feed a deep ranker. Cold-start fallbacks, a Redis-cached API, Spark feature tables and a gated Airflow retraining pipeline surround it.</p>
         <div class="actions">
           <a class="button primary" href="https://huggingface.co/spaces/Ram15x/movie-recommender">Try the live demo</a>
-          <a class="button" href="https://github.com/ram15x/personalized-recommendation-engine">Source on GitHub</a>
-          <a class="button" href="https://github.com/ram15x/personalized-recommendation-engine/blob/main/docs/results.md">Full results</a>
+          <a class="button" href="https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-03">Source on GitHub</a>
+          <a class="button" href="https://github.com/ram15x/nexvia-aiml-internship/blob/main/AIML-03/docs/results.md">Full results</a>
         </div>
       </section>
       <aside class="notice"><strong>Live demo:</strong> pick a few films and get ranked suggestions from the real model, hosted on a free Hugging Face Space (it may take a few minutes to wake up). The demo uses film choices only; no user ratings are published and MovieLens data is not redistributed.</aside>
@@ -94,10 +94,10 @@
           <li><strong>Models are evaluated frozen.</strong> They were trained 18 months before the test window, which is a deliberately strict check. The weekly retraining pipeline keeps a deployed model current.</li>
           <li><strong>The sources work best together.</strong> Item-KNN is the stronger single retriever; the two-tower finds different films, and the ranker uses both.</li>
         </ul>
-        <p class="caveat">Every number on this page is generated from <code>results/final_test.json</code>. Full scope notes: <a href="https://github.com/ram15x/personalized-recommendation-engine/blob/main/docs/limitations.md">docs/limitations.md</a>.</p>
+        <p class="caveat">Every number on this page is generated from <code>results/final_test.json</code>. Full scope notes: <a href="https://github.com/ram15x/nexvia-aiml-internship/blob/main/AIML-03/docs/limitations.md">docs/limitations.md</a>.</p>
       </section>
     </main>
-    <footer>MovieLens 25M is licensed for research by GroupLens and is not redistributed here. Source: <a href="https://github.com/ram15x/personalized-recommendation-engine">github.com/ram15x/personalized-recommendation-engine</a>.</footer>
+    <footer>MovieLens 25M is licensed for research by GroupLens and is not redistributed here. Source: <a href="https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-03">github.com/ram15x/personalized-recommendation-engine</a>.</footer>
   </div>
 </body>
 </html>
