@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from fastapi.responses import FileResponse, StreamingResponse
 from torch import nn
 from .guards import install_guards, orthanc_enabled
+from .calibration import Calibration
 from .modeling import ARCHITECTURE_NAMES, build_classifier, gradcam_target, image_to_tensor
 from .qa import (MAX_QUESTION_CHARS, AUDIENCES, CaseStore, URGENT_ANSWER, answer, configured_model,
                  is_configured, is_urgent)
@@ -71,11 +72,14 @@ def _environment_bool(variable: str, default: bool = False) -> bool:
 
 
 CHECKPOINT = _project_path("NEXVIA_CHECKPOINT", "artifacts/best_densenet121.pt")
+CALIBRATION_PATH = _project_path("NEXVIA_CALIBRATION_PATH", "artifacts/calibration.json")
+CLASSIFIER_FLIP_TTA = _environment_bool("NEXVIA_CLASSIFIER_FLIP_TTA", True)
+CALIBRATION = Calibration.load(CALIBRATION_PATH)
 SEGMENTATION_CHECKPOINT = _project_path(
     "NEXVIA_SEGMENTATION_CHECKPOINT",
     "artifacts/best_spleen_unet_20261109.pt",
 )
-SEGMENTATION_THRESHOLD = float(os.environ.get("NEXVIA_SEGMENTATION_THRESHOLD", "0.50"))
+SEGMENTATION_THRESHOLD = float(os.environ.get("NEXVIA_SEGMENTATION_THRESHOLD", "0.40"))
 if not 0.0 < SEGMENTATION_THRESHOLD < 1.0:
     raise ValueError("NEXVIA_SEGMENTATION_THRESHOLD must be between 0 and 1.")
 SEGMENTATION_TTA = _environment_bool("NEXVIA_SEGMENTATION_TTA", False)
@@ -632,15 +636,30 @@ def _score_image(image: Image.Image) -> dict[str, Any]:
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Could not load model: {type(exc).__name__}") from exc
     with _model_lock, torch.inference_mode():
-        scores = torch.sigmoid(model(_image_tensor(image))).squeeze(0).tolist()
+        tensor = _image_tensor(image)
+        logits = model(tensor)
+        if CLASSIFIER_FLIP_TTA:
+            logits = (logits + model(torch.flip(tensor, dims=[3]))) / 2
+        logits = logits.squeeze(0)
+        scores = torch.sigmoid(logits).tolist()
+        logit_values = logits.tolist()
     case_ref = str(uuid.uuid4())
+    findings = []
+    for label, score, logit in zip(LABELS, scores, logit_values):
+        findings.append({"label": label, "score": round(float(score), 6),
+                         **CALIBRATION.apply(label, float(logit))})
     response = {
         "case_ref": case_ref,
         "model": _model_metadata.get("model_name", "Unknown classifier"),
         "model_metadata": _model_metadata,
-        "score_semantics": "Uncalibrated sigmoid scores; not diagnostic probabilities.",
-        "findings": [{"label": label, "score": round(float(score), 6)}
-                     for label, score in zip(LABELS, scores)],
+        "score_semantics": (
+            "score is the raw sigmoid of the flip-averaged logit and is not a probability. "
+            "calibrated_probability and review_flag come from per-label calibration fitted on "
+            "a 999-image NIH sample; labels without enough positives there have neither."
+        ),
+        "calibration": CALIBRATION.summary(),
+        "flip_averaged": CLASSIFIER_FLIP_TTA,
+        "findings": findings,
         "disclaimer": DISCLAIMER,
     }
     CASES.put(case_ref, {key: response[key] for key in

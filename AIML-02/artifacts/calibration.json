@@ -1,0 +1,93 @@
+{
+  "method": "per-label Platt scaling on flip-TTA logits, F1-optimal threshold on calibrated probability",
+  "fit_on": "NIH ChestX-ray14 official-test sample, 999 images from 549 patients",
+  "min_positives": 20,
+  "labels": {
+    "Atelectasis": {
+      "calibrated": true,
+      "a": 1.5809125900268555,
+      "b": -2.0982723236083984,
+      "threshold": 0.17165571725568518,
+      "positives": 80
+    },
+    "Cardiomegaly": {
+      "calibrated": true,
+      "a": 0.9869216084480286,
+      "b": -2.013023614883423,
+      "threshold": 0.10295937131795418,
+      "positives": 21
+    },
+    "Effusion": {
+      "calibrated": true,
+      "a": 0.9073125123977661,
+      "b": -1.675926923751831,
+      "threshold": 0.19300846867293314,
+      "positives": 131
+    },
+    "Infiltration": {
+      "calibrated": true,
+      "a": 2.386916160583496,
+      "b": -1.9998559951782227,
+      "threshold": 0.19206604931338517,
+      "positives": 122
+    },
+    "Mass": {
+      "calibrated": true,
+      "a": 0.6159748435020447,
+      "b": -2.6642799377441406,
+      "threshold": 0.08947257205663886,
+      "positives": 33
+    },
+    "Nodule": {
+      "calibrated": true,
+      "a": 0.7691295742988586,
+      "b": -2.6916980743408203,
+      "threshold": 0.07127258711613257,
+      "positives": 33
+    },
+    "Pneumonia": {
+      "calibrated": false,
+      "positives": 7
+    },
+    "Pneumothorax": {
+      "calibrated": true,
+      "a": 1.4993022680282593,
+      "b": -0.5007311701774597,
+      "threshold": 0.11527467156976659,
+      "positives": 98
+    },
+    "Consolidation": {
+      "calibrated": true,
+      "a": 1.321254014968872,
+      "b": -2.206256151199341,
+      "threshold": 0.07473036289155083,
+      "positives": 36
+    },
+    "Edema": {
+      "calibrated": false,
+      "positives": 11
+    },
+    "Emphysema": {
+      "calibrated": true,
+      "a": 0.779843270778656,
+      "b": -1.7953299283981323,
+      "threshold": 0.11970310343521955,
+      "positives": 43
+    },
+    "Fibrosis": {
+      "calibrated": false,
+      "positives": 1
+    },
+    "Pleural_Thickening": {
+      "calibrated": true,
+      "a": 0.9714863300323486,
+      "b": -2.6511783599853516,
+      "threshold": 0.09987089990569441,
+      "positives": 24
+    },
+    "Hernia": {
+      "calibrated": false,
+      "positives": 0
+    }
+  }
+}

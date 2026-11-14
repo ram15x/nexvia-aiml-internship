@@ -12,7 +12,7 @@ An educational prototype that scores chest X-rays and segments the spleen on CT,
 
 Two separate models share one review screen. They don't share weights or data.
 
-- **Chest X-ray findings.** An ImageNet-pretrained DenseNet-121, fine-tuned on NIH ChestX-ray14 (transfer learning), gives 14 scores (the NIH ChestX-ray14 labels) for a PNG, JPEG or single-frame DICOM. A Grad-CAM overlay and a sampled SHAP view show which regions moved a score.
+- **Chest X-ray findings.** An ImageNet-pretrained DenseNet-121, fine-tuned on NIH ChestX-ray14 (transfer learning), gives 14 scores (the NIH ChestX-ray14 labels) for a PNG, JPEG or single-frame DICOM. Each image is scored twice, as it is and mirrored, and the two are averaged. Per-label calibration turns the score into a probability estimate and a review flag for the labels with enough examples. A Grad-CAM overlay and a sampled SHAP view show which regions moved a score.
 - **Spleen segmentation.** A MONAI 3D U-Net takes a NIfTI CT volume and returns a binary mask with axial, coronal and sagittal previews.
 - **Review and audit.** A reviewer can mark a result "Approve (demo only)", "Reject output" or "Needs review". Every action is appended to a log with the hash of the model file that produced the result.
 - **Optional extras.** A guarded Q&A panel (needs an `OPENROUTER_API_KEY`) answers questions about one result using only its scores. An Orthanc connector pulls new chest radiographs and CT series from a local DICOM server.
@@ -23,18 +23,18 @@ These are small samples. Read the numbers with that in mind.
 
 | Model | Data it was measured on | Result |
 |---|---|---|
-| Chest X-ray classifier | 999 NIH images from 549 patients | Macro AUROC 0.797, macro average precision 0.151, micro F1 0.256 at a 0.5 threshold |
-| Spleen segmentation | 6 held-out CT cases the model never trained or was selected on | Mean Dice 0.877 as served (per case 0.81 to 0.94). Raw network output alone: 0.715 |
+| Chest X-ray classifier | 999 NIH images from 549 patients | Macro AUROC 0.805 with mirror averaging (0.797 single pass). Macro average precision 0.150. Calibrated and thresholded per label, scored out-of-fold by patient: Brier 0.053 (0.090 raw), micro F1 0.283 |
+| Spleen segmentation | 6 held-out CT cases the model never trained or was selected on | Mean Dice 0.887 as served (per case 0.82 to 0.94). Raw network output alone: 0.715 |
 
 What to keep in mind:
 
-- At the 0.5 threshold the classifier finds about half of the positives (micro recall 0.48) and most of its flags are wrong (micro precision 0.17). The scores are not calibrated probabilities.
+- With the per-label review thresholds the classifier flags about half of the positives (micro recall 0.52) and about one flag in five is right (micro precision 0.19), scored out-of-fold. The raw scores are not probabilities; the calibrated percentage is an estimate fitted on this same small sample, and Pneumonia, Edema, Fibrosis and Hernia have too few positives in it (7, 11, 1 and 0) to calibrate, so they show the raw score only.
 - Performance is lower for patients aged 60 and over (macro AUROC 0.709, against 0.822 for under-40s). The cause was not investigated.
-- The served spleen mask keeps only the largest connected 3D blob. That step was chosen on the 6 validation cases (Dice 0.736 to 0.880) and then measured on the 6 test cases (0.715 to 0.877). The test cases had already been scored once without it, so 0.877 is not a fresh blind estimate. It improved all 12 cases, but it can't fix a mask whose largest blob is the wrong organ.
+- The served spleen mask keeps only the largest connected 3D blob and uses a foreground threshold of 0.4. The blob step was chosen on the 6 validation cases (Dice 0.736 to 0.880) and the threshold on the same cases (0.880 to 0.887); on the 6 test cases the result is 0.715 raw, 0.877 with the blob step and 0.887 with both. The test cases had already been scored once, so 0.887 is not a fresh blind estimate, and the 0.4 threshold helped 5 of 6 test cases by 0.008 to 0.025 and left one flat. Averaging with flipped copies of the CT lowered Dice, so it stays off. The blob step can't fix a mask whose largest blob is the wrong organ.
 - The spleen figure comes from six cases, so it could move a lot with different cases. Without the clean-up, two of the six were clearly over-segmented. Validation Dice jumped between 0.28 and 0.74 from one epoch to the next near the end of training.
 - NIH labels are mined from radiology reports and are noisy.
 
-Per-label tables with patient-level confidence intervals are in [docs/results.md](docs/results.md). The spleen split, run summary and per-case results are in [results/spleen](results/spleen). More on limits and bias: [docs/limits_and_bias.md](docs/limits_and_bias.md).
+Per-label tables with patient-level confidence intervals are in [docs/results.md](docs/results.md). The spleen split, run summary and per-case results are in [results/spleen](results/spleen). Calibration and review thresholds: [docs/calibration.md](docs/calibration.md). More on limits and bias: [docs/limits_and_bias.md](docs/limits_and_bias.md).
 
 ## How it fits together
 
@@ -104,7 +104,7 @@ If Orthanc sync or CT segmentation answers 500 with `PermissionError` under Dock
 
 ## Tests
 
-`python -m pytest -q` runs 100 tests. On a clean checkout 96 pass and 4 skip (checked on a fresh clone, Python 3.13, CPU): three need the NIH sample images (`dvc pull`) and one needs the demo image. `python tools/check_baseline.py results/nih_sample/per_label_intervals.json` fails if a new evaluation of the classifier falls below the frozen baseline in `results/nih_sample/baseline.json`. What the tests cover, and what they don't, is in [docs/test_results.md](docs/test_results.md).
+`python -m pytest -q` runs 106 tests. On a clean checkout 102 pass and 4 skip (checked on a fresh clone, Python 3.13, CPU): three need the NIH sample images (`dvc pull`) and one needs the demo image. `python tools/check_baseline.py results/nih_sample/per_label_intervals.json` fails if a new evaluation of the classifier falls below the frozen baseline in `results/nih_sample/baseline.json`. What the tests cover, and what they don't, is in [docs/test_results.md](docs/test_results.md).
 
 ## Reproduce the numbers
 
