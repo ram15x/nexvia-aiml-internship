@@ -1,0 +1,263 @@
+{
+ "window": "test",
+ "users": 6252,
+ "protocol": "frozen models; user histories advanced to the window start; relevant = unseen items rated >=4 in the window; items outside the frozen catalog count as misses",
+ "systems": {
+  "popularity": {
+   "recall@10": {
+    "mean": 0.026,
+    "ci95": [
+     0.0241,
+     0.0281
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0728,
+    "ci95": [
+     0.0692,
+     0.0765
+    ]
+   },
+   "recall@100": {
+    "mean": 0.116,
+    "ci95": [
+     0.112,
+     0.1202
+    ]
+   },
+   "ndcg@100": {
+    "mean": 0.083,
+    "ci95": [
+     0.0803,
+     0.0859
+    ]
+   }
+  },
+  "two_tower": {
+   "recall@10": {
+    "mean": 0.0328,
+    "ci95": [
+     0.0307,
+     0.0349
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0857,
+    "ci95": [
+     0.0818,
+     0.0895
+    ]
+   },
+   "recall@100": {
+    "mean": 0.169,
+    "ci95": [
+     0.1643,
+     0.1741
+    ]
+   },
+   "ndcg@100": {
+    "mean": 0.1115,
+    "ci95": [
+     0.1083,
+     0.1146
+    ]
+   }
+  },
+  "itemknn": {
+   "recall@10": {
+    "mean": 0.0411,
+    "ci95": [
+     0.0386,
+     0.0436
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.1091,
+    "ci95": [
+     0.1047,
+     0.1134
+    ]
+   },
+   "recall@100": {
+    "mean": 0.1815,
+    "ci95": [
+     0.1765,
+     0.1867
+    ]
+   },
+   "ndcg@100": {
+    "mean": 0.1264,
+    "ci95": [
+     0.1229,
+     0.1299
+    ]
+   }
+  },
+  "dcn": {
+   "recall@10": {
+    "mean": 0.0514,
+    "ci95": [
+     0.0489,
+     0.054
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.1272,
+    "ci95": [
+     0.1225,
+     0.1317
+    ]
+   },
+   "recall@100": {
+    "mean": 0.2099,
+    "ci95": [
+     0.2047,
+     0.2152
+    ]
+   },
+   "ndcg@100": {
+    "mean": 0.1478,
+    "ci95": [
+     0.1442,
+     0.1512
+    ]
+   }
+  },
+  "wide_deep": {
+   "recall@10": {
+    "mean": 0.0509,
+    "ci95": [
+     0.0485,
+     0.0535
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.1273,
+    "ci95": [
+     0.1229,
+     0.1316
+    ]
+   },
+   "recall@100": {
+    "mean": 0.2105,
+    "ci95": [
+     0.2054,
+     0.2159
+    ]
+   },
+   "ndcg@100": {
+    "mean": 0.1477,
+    "ci95": [
+     0.1443,
+     0.1512
+    ]
+   }
+  }
+ },
+ "paired": {
+  "dcn_minus_itemknn": {
+   "recall@10": {
+    "mean": 0.0103,
+    "ci95": [
+     0.0083,
+     0.0124
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0181,
+    "ci95": [
+     0.0153,
+     0.0211
+    ]
+   }
+  },
+  "dcn_minus_two_tower": {
+   "recall@10": {
+    "mean": 0.0186,
+    "ci95": [
+     0.0161,
+     0.0212
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0415,
+    "ci95": [
+     0.0378,
+     0.0452
+    ]
+   }
+  },
+  "dcn_minus_popularity": {
+   "recall@10": {
+    "mean": 0.0253,
+    "ci95": [
+     0.0225,
+     0.0282
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0544,
+    "ci95": [
+     0.0502,
+     0.0583
+    ]
+   }
+  },
+  "wide_deep_minus_itemknn": {
+   "recall@10": {
+    "mean": 0.0099,
+    "ci95": [
+     0.0077,
+     0.0121
+    ]
+   },
+   "ndcg@10": {
+    "mean": 0.0182,
+    "ci95": [
+     0.0154,
+     0.0213
+    ]
+   }
+  },
+  "dcn_minus_wide_deep": {
+   "recall@10": {
+    "mean": 0.0004,
+    "ci95": [
+     -0.0008,
+     0.0016
+    ]
+   },
+   "ndcg@10": {
+    "mean": -0.0001,
+    "ci95": [
+     -0.0014,
+     0.0011
+    ]
+   }
+  }
+ },
+ "ab_replay": {
+  "note": "simulated replay on held-out interactions: a click = the shown item is relevant AND the user examines that position (prob 1/log2(pos+1)); users are split by a stable hash",
+  "control_dcn": {
+   "users": 3090,
+   "impressions": 30900,
+   "clicks": 1679,
+   "ctr": 0.05434,
+   "expected_ctr_no_sampling": 0.05452
+  },
+  "treatment_wide_deep": {
+   "users": 3162,
+   "impressions": 31620,
+   "clicks": 1729,
+   "ctr": 0.05468,
+   "expected_ctr_no_sampling": 0.05468
+  },
+  "ctr_diff_treatment_minus_control": 0.00034,
+  "diff_ci95_user_bootstrap": [
+   -0.0043,
+   0.00499
+  ],
+  "two_proportion_z": 0.187,
+  "p_value_two_sided": 0.8515
+ }
+}

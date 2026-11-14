@@ -1,0 +1,12 @@
+name: "dcn_ranker"
+platform: "tensorflow_savedmodel"
+max_batch_size: 0
+input [
+  { name: "dense" data_type: TYPE_FP32 dims: [ -1, 52 ] },
+  { name: "year"  data_type: TYPE_INT32 dims: [ -1 ] },
+  { name: "pop"   data_type: TYPE_INT32 dims: [ -1 ] }
+]
+output [
+  { name: "logit" data_type: TYPE_FP32 dims: [ -1 ] }
+]
+instance_group [ { kind: KIND_CPU count: 1 } ]

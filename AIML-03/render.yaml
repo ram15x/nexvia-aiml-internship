@@ -1,0 +1,7 @@
+services:
+  - type: web
+    runtime: static
+    name: personalized-recommendation-engine-page
+    branch: main
+    buildCommand: "true"
+    staticPublishPath: ./site

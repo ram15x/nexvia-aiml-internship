@@ -1,0 +1,100 @@
+# Project 2 — Local end-to-end verification
+Date: 5 November 2026
+
+## What passed
+
+- Docker Desktop engine: Docker 29.8.0 / Docker Desktop 4.92.0, Linux engine.
+- Command: docker compose build --pull=false api
+  Result: passed. The Python base image and pinned API dependency layer were already cached. The build context was 96.91 kB. No package or dataset was downloaded during this build.
+- Command: docker compose up -d --no-build
+  Result: API and Redis started; Redis passed its health check.
+- Live HTTP checks against http://127.0.0.1:8810:
+  - GET /health: HTTP 200; status ok; 13,173 catalog entries; ItemKNN loaded; Redis enabled; no Redis error. Neural retrieval/ranker models and the experiment store were disabled.
+  - GET /: HTTP 200.
+  - POST /recommend with history_item_ids [318], limit 5: HTTP 200; strategy itemknn_cosine; returned IDs 296, 593, 50, 527, 356; the history item 318 was excluded.
+  - POST /recommend with preferred_genres [Drama], limit 5: HTTP 200; strategy user_genre_content; all five returned entries reported Drama as a matched genre.
+  - POST /recommend with an empty request, limit 5: HTTP 200; strategy training_period_popularity.
+- Command: docker compose down
+  Result: API, Redis, and the Compose network were stopped and removed. A subsequent compose ps showed no running services.
+
+## Test suite
+
+The full test suite ran in the existing isolated Python 3.10 verification environment with PySpark 4.0.5 installed.
+
+- Unprivileged run: 64 passed, 2 Spark setup errors. The local Java gateway could not open a loopback socket (WinError 10013), which is a sandbox permission failure.
+- Local-network-enabled run: 64 passed, 2 failed. Both failures are test_spark_prepare_features.py Parquet-write tests. Hadoop raised: “HADOOP_HOME and hadoop.home.dir are unset.” Spark's Windows shell also reported that winutils.exe was not found.
+- Therefore, the non-Spark suite passed in this run. The Spark Parquet job and its two write-path tests did not pass on this Windows setup. The output does not establish that Spark works end to end.
+
+Follow-up command, excluding the Spark test module entirely:
+
+```powershell
+python -m pytest -q -p no:cacheprovider --ignore=test_spark_prepare_features.py --basetemp <temporary-directory>
+```
+
+Result: **63 passed in 19.79 seconds**. This confirms the non-Spark tests in the current checkout; it does not resolve the two Spark write-test failures or validate the Spark job.
+
+Local-network-enabled full-suite command (PowerShell):
+$env:JAVA_HOME='<path-to-local-jdk>'
+$env:SPARK_LOCAL_IP='127.0.0.1'
+$env:PYSPARK_PYTHON='<path-to-isolated-python>'
+python -m pytest -q -p no:cacheprovider --basetemp <temporary-directory>
+
+## Scope and limitations
+
+- The Docker demo currently serves ItemKNN with popularity fallback and explicit genre matching. It does not serve the learned TFRS/FAISS retriever or the candidate DCN rankers.
+- Learned-model comparisons and ItemKNN metrics use development panels reused during model work. They are not independent test results and do not establish online lift.
+- At the time of this initial check, Triton and Airflow runtimes were not started. The Airflow and Triton follow-ups below supersede that initial state.
+- A/B assignment and click-recording code has synthetic tests only. No real users, impressions, clicks, or CTR measurements are available.
+- No MovieLens Spark feature-table run was completed during the initial check. The full job was run in the follow-up below. No model training or MovieLens data download occurred.
+- At the time of this verification run, before the public repository was created, the Project-2 folder had local history but no configured GitHub remote. The public release was published later; see the current README and requirements status.
+- At inspection, the folder contained 267 files totaling 891.92 MiB; data/ml-25m/ratings.csv accounted for 646.84 MiB. The ratings file is the source needed for the full offline experiments; the Docker demo excludes it from the build context.
+
+## Status
+
+The local Docker demo and its three user-facing recommendation strategies are verified over HTTP. The full Spark feature-preparation job is also verified in Linux on the local 25M source, and a later Triton CPU inference check is recorded below. The entire assignment is not complete: execution of an Airflow retraining task, genuine online A/B measurement, presentation, reflection, and portal submission remain outstanding. Do not describe this as production-ready or as a proven improvement over an independent test set.
+
+## Additional current-state checks
+
+The Compose check was repeated against the current folder on 5 November. `docker compose build --pull=false` succeeded from cached layers with a 2.60 kB build context. Live HTTP returned `/health` status `ok`, `catalog_items=13173`, `itemknn_loaded=true`, `redis_cache_enabled=true`, and `redis_last_error=null`. `POST /recommend` with history item 318 returned ItemKNN recommendations 296, 593, 50, 527, and 356; 318 was excluded. A Drama request returned five items with Drama matches. A request with no history used `training_period_popularity`. The API, Redis service, and Compose network were stopped afterward.
+
+The native API was also started with the saved retrieval, ItemKNN, and DCN artifacts. `/health` reported the two-tower model, ranker, and experiment store loaded. A live `/experimental/two-tower` request for MovieLens development user 139 returned five retrieved items with `strategy=experimental_two_tower` and `reason=unknown_items`; the DCN did not rerank that set because its training support did not cover every retrieved item. The live `/experimental/ab/recommend` endpoint assigned one synthetic participant to each arm: A used `itemknn_cosine`, B used `experimental_dcn`. One synthetic click was sent for the first item in each response, and `/experimental/ab/summary` returned five item positions and one click per arm (item CTR 0.2 each). This verifies endpoint plumbing only. It is not real user behavior, an online result, or a valid CTR estimate. The temporary SQLite event database was removed after the smoke check.
+
+Fresh test reruns on the current folder: the non-Spark suite returned **63 passed in 17.96 seconds**. The Spark module returned **1 passed, 2 failed**; the two Parquet-writing tests fail with `HADOOP_HOME and hadoop.home.dir are unset` and the Hadoop Windows `winutils.exe` requirement. The full MovieLens Spark job was not part of that Windows pytest run; it passed in the Linux follow-up below. At the time of this test run, no GitHub remote had been configured. The current public repository and later synchronization are recorded in `docs/requirements-status.md`.
+
+## Two-stage candidate support audit
+
+`reports/development/two-stage-compatibility-2026-11-05.json` records a read-only comparison between the saved `reports/retrieval-pilot` FAISS index and the trained item support in the pointwise candidate DCN. The audit found 1,951 shared users, 5,272 shared items, and a mean supported fraction of 0.6016 across the raw top 100. Per-user supported counts ranged from 16 to 99, with a median of 62; no shared user had all 100 supported. It did not apply seen-item filtering, read ratings, or measure ranking quality. The API's all-candidate support guard therefore avoids mixing scored and unscored candidates, but the audit does not prove a candidate-filtering change would improve recommendations.
+
+## Same-day Docker recheck
+
+Using the already-cached `project-2-api` and `redis:7-alpine` images with `docker compose up -d --no-build`, live HTTP returned `/health` status `ok`, catalog size 13,173, ItemKNN loaded, and Redis cache enabled. `GET /` returned HTTP 200. `POST /recommend` for history item 318 returned five recommendations with strategy `itemknn_cosine` and excluded 318. A Drama-preference request returned the `user_genre_content` strategy and all five results matched Drama. An empty request returned five results using `training_period_popularity`. The API, Redis container, and Compose network were removed with `docker compose down --remove-orphans`. No images or data were downloaded.
+
+## Airflow and Triton runtime follow-up
+
+On 5 November, the official `apache/airflow:slim-3.3.1-python3.12` image was pulled (about 266 MB compressed according to Docker Hub) and run with the project's `airflow/dags` folder mounted read-only. `airflow standalone` initialized a temporary SQLite metadata database. `airflow dags list` showed `nexvia_manual_retraining`; `airflow dags list-import-errors` returned `No data found`. The DAG was paused, and no Airflow task was triggered. Separately, `prepare_run` was called directly from the project's existing Python 3.10 verification environment with the actual ratings file and `reports/ml-25m/metrics.json`. It passed the ratings SHA-256 check (`9c85525758597dca76e8d98cebb9c13e018c2317b09a0878b6d383179526e385`) and ordered timestamp checks, and created a temporary run configuration that was removed after inspection. No training was triggered.
+
+Triton inference was first blocked by using the `25.10-py3-min` base-only tag; it had no Python or server executable and was removed. A later approved pull of `nvcr.io/nvidia/tritonserver:25.10-py3` supplied Triton 2.62.0, Python backend and NumPy, but not TensorFlow. The saved Keras weights were exported to a TensorFlow-free NumPy bundle with a local SHA-256 sidecar. NumPy outputs matched the saved TensorFlow model within `2.3841858e-7` on 32 supported pairs. Triton loaded `dcn_ranker:1` as READY on CPU; `/v2/health/ready` and `/v2/models/dcn_ranker/ready` both returned HTTP 200. One HTTP inference for user 139 over items `[1, 2, 3, 5, 6]` with scores `[0.91, 0.72, 0.61, 0.55, 0.42]` returned `[3.1989660, 2.9194598, 2.7488132, 3.0142066, 3.8532543]`, with all support flags true. The TensorFlow reference differed by at most `2.3841858e-7`. This verifies inference compatibility only, not recommendation quality. The full image occupied 19,885,930,811 bytes and was removed with the test container after the check; repulling it and regenerating the ignored NumPy weights is required to repeat the run.
+
+The full suite was rerun on 5 November from the existing Python 3.10 verification environment: **64 passed, 2 failed**. Both failures are Spark Parquet-write tests on Windows; the errors report missing `HADOOP_HOME`/`hadoop.home.dir` and `winutils.exe`. No new training or dataset download occurred.
+
+## Full Spark 4.0.5 feature-preparation run
+
+The project script then ran against the already-local full MovieLens 25M CSVs in the official `apache/spark:4.0.5` Linux image. Docker was capped at 6 GB RAM and 6 CPUs; Spark ran with `local[6]` and a 5 GB driver. It completed successfully and reported: **12,500,047** training interactions, **2,500,010** validation interactions, **89,881** training users, **9,659** training items, and **9,659** catalog rows. It wrote **97,231,652 bytes** across the Parquet tables. The default 60/70 temporal development window was used; this does not train a model or produce recommendation metrics.
+
+The command was equivalent to:
+
+```powershell
+docker run --rm --platform linux/amd64 --memory 6g --cpus 6 `
+  -v "<Project-2 folder>:/opt/project:ro" `
+  -v "<temporary output folder>:/output" `
+  -e SPARK_LOCAL_HOSTNAME=localhost `
+  --entrypoint /opt/spark/bin/spark-submit apache/spark:4.0.5 `
+  --master 'local[6]' --driver-memory 5g `
+  /opt/project/scripts/spark_prepare_features.py `
+  --ratings /opt/project/data/ml-25m/ratings.csv `
+  --movies /opt/project/data/ml-25m/movies.csv `
+  --output /output/features --master 'local[6]'
+```
+
+A separate 5-row fixture passed in Spark 4.0.1, and a duplicate-pair fixture correctly failed with `Duplicate user/item rows found`, leaving neither the final output nor a staging folder. The temporary full output and both pulled Spark image tags were removed after verification. The two Spark pytest writer cases still fail when run natively on Windows.
+

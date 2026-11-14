@@ -1,0 +1,58 @@
+{
+ "sparse_1_to_4_likes": {
+  "users_in_cohort": 55,
+  "users_evaluated": 55,
+  "route_used": "two_source+dcn",
+  "system": {
+   "recall@10": 0.069,
+   "ndcg@10": 0.1992,
+   "ndcg@10_ci95": [
+    0.1513,
+    0.257
+   ]
+  },
+  "popularity": {
+   "recall@10": 0.0643,
+   "ndcg@10": 0.2241,
+   "ndcg@10_ci95": [
+    0.1565,
+    0.2967
+   ]
+  },
+  "paired_ndcg@10_diff": {
+   "mean": -0.0249,
+   "ci95": [
+    -0.0849,
+    0.033
+   ]
+  }
+ },
+ "cold_0_likes": {
+  "users_in_cohort": 12709,
+  "users_evaluated": 1500,
+  "route_used": "cold_start_popularity",
+  "system": {
+   "recall@10": 0.0723,
+   "ndcg@10": 0.3866,
+   "ndcg@10_ci95": [
+    0.3719,
+    0.399
+   ]
+  },
+  "popularity": {
+   "recall@10": 0.0723,
+   "ndcg@10": 0.3866,
+   "ndcg@10_ci95": [
+    0.3719,
+    0.399
+   ]
+  },
+  "paired_ndcg@10_diff": {
+   "mean": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ]
+  }
+ }
+}

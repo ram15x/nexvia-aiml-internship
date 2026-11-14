@@ -1,0 +1,11 @@
+# Runtime packages for the hosted demo (Python 3.10 to 3.13). Same ranked output as the full environment was checked on Python 3.10 (see docs/deploy_space.md)
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.15.3
+pyarrow==25.0.1
+tensorflow==2.21.0
+tf-keras==2.21.0
+tensorflow-recommenders==0.7.7
+faiss-cpu==1.15.1
+redis==8.1.0
+gradio==6.31.0

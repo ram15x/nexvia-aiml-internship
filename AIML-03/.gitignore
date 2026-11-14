@@ -1,0 +1,17 @@
+.venv/
+.venv-*/
+__pycache__/
+.pytest_cache/
+.env
+*.sqlite
+*.sqlite-*
+# data and large generated artifacts (MovieLens must not be redistributed)
+data/
+runs/
+bundle/
+airflow_home/
+airflow_work*/
+*.zip
+*.npz
+!results/*.npz.keep
+.DS_Store

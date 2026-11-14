@@ -1,0 +1,13 @@
+{
+  "airflow_version": "3.1.8 (executed with `airflow dags test`, single process, in the project workspace)",
+  "dag": "retrain_recommender: spark_features -> train_retrieval -> build_knn -> evaluate_candidate -> quality_gate -> build_bundle -> promote",
+  "runs": [
+    {"name": "smoke run 1 (tiny training budget)", "state": "failed",
+     "detail": "build_knn failed: the neighbour matrix was saved before its output folder existed. A real bug found by the orchestrated run; fixed in scripts/itemknn_baseline.py."},
+    {"name": "smoke run 2 (tiny training budget: 1 epoch of 100 steps)", "state": "success",
+     "detail": "quality_gate returned BLOCK: candidate Recall@100 0.1456 vs production 0.2323 (floor 0.2277). Downstream tasks (build_bundle, promote) were skipped by Airflow."},
+    {"name": "full run (8 x 400 steps, same settings as production)", "state": "success",
+     "detail": "quality_gate returned PROMOTE: candidate Recall@100 0.2363 vs production 0.2323 (floor 0.2277). build_bundle trained both rankers (dev NDCG@10 0.1843 DCN-v2, 0.1859 Wide & Deep) and promote atomically pointed bundles/current at the new bundle, which loads and serves requests."}
+  ],
+  "note": "The retrained retriever differs slightly from the production one (TensorFlow training is not bit-for-bit deterministic across runs); the test-window numbers in results/final_test.json belong to the original bundle, not the DAG-built one."
+}

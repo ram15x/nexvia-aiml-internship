@@ -1,0 +1,14 @@
+{
+  "what": "scripts/prepare_data.py run on the full MovieLens 25M ratings.csv (a second, independent run on a different machine) and compared with the arrays used for every result in this repository",
+  "script_sha256_prefix": "7187d0c26bb7ca90",
+  "rows": 25000095,
+  "sha256_of_concatenated_arrays_prefix": {
+    "user": "6acfb05f8e383158",
+    "item": "653eacce939208be",
+    "rating2": "156c9a49367c2a3d",
+    "ts": "cac079f913eda100"
+  },
+  "movies_csv_sha256_prefix": "c50dea6973e619f9",
+  "result": "all four array digests, the row count and movies.csv are identical to the arrays used by the pipeline",
+  "how_to_repeat": "python scripts/prepare_data.py ml-25m/ratings.csv data/parts --parts 4, then hash each array (user, item, rating2, ts) over parts 0..3 in order (about 45 s on 2 CPUs)"
+}

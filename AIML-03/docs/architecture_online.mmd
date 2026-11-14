@@ -1,0 +1,14 @@
+flowchart LR
+  P[("Versioned bundle<br/>(from the offline pipeline)")] --> API
+  subgraph ONLINE["Online serving"]
+    direction LR
+    C["Client"] --> API["FastAPI<br/>/recommend, /recommend/ab"]
+    API <--> RD[("Redis<br/>response cache")]
+    API --> ROUTE{"Has liked<br/>items?"}
+    ROUTE -- no --> POP["Cold start:<br/>popularity or<br/>genre-filtered popularity"]
+    ROUTE -- yes --> RET["Candidates, 250:<br/>two-tower via FAISS HNSW<br/>(built at startup)<br/>+ item-KNN, interleaved"]
+    RET --> RANK["Re-rank:<br/>DCN-v2 or Wide and Deep<br/>(A/B arms by user hash)"]
+    RANK -. optional .-> TRI["Triton<br/>TF SavedModel"]
+    RANK --> OUT["Top-K with titles,<br/>genres, scores"]
+    POP --> OUT
+  end
