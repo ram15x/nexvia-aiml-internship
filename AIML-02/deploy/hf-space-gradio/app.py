@@ -19,7 +19,17 @@ def classify(path):
         prediction = _score_image(image)
     except Exception as exc:
         raise gr.Error(f"Image could not be processed ({type(exc).__name__}).") from exc
-    return [[item["label"], item["score"]] for item in prediction["findings"]]
+    rows = []
+    for item in prediction["findings"]:
+        pct = item.get("calibrated_probability")
+        flag = item.get("review_flag")
+        rows.append([
+            item["label"],
+            item["score"],
+            "n/a" if pct is None else f"{pct * 100:.1f}%",
+            "n/a" if flag is None else ("Review" if flag else "Below threshold"),
+        ])
+    return rows
 
 @spaces.GPU(duration=60)
 def segment(path):
@@ -44,11 +54,11 @@ def segment(path):
 
 with gr.Blocks(title="Medical Imaging AI Review Platform") as demo:
     gr.Markdown("# Medical Imaging AI Review Platform\n**Educational demo only. Not for diagnosis or treatment. Do not upload patient data.**")
-    gr.Markdown("Two separate models analyze chest X-rays and CT volumes. Outputs are experimental and are not calibrated clinical probabilities.")
+    gr.Markdown("Two separate models analyze chest X-rays and CT volumes. Outputs are experimental. Calibrated percentages are estimates fitted on a small public sample, not clinical probabilities, and four labels with too few positives are left uncalibrated (n/a).")
     with gr.Tab("Chest X-ray"):
         chest = gr.File(label="PNG or JPEG", file_types=[".png", ".jpg", ".jpeg"], type="filepath")
         chest_button = gr.Button("Analyze X-ray", variant="primary")
-        findings = gr.Dataframe(headers=["Finding", "Score"], datatype=["str", "number"], interactive=False)
+        findings = gr.Dataframe(headers=["Finding", "Raw score", "Calibrated", "Review flag"], datatype=["str", "number", "str", "str"], interactive=False)
         chest_button.click(classify, inputs=chest, outputs=findings)
     with gr.Tab("Spleen CT"):
         volume = gr.File(label="3D NIfTI (.nii or .nii.gz)", file_types=[".nii", ".nii.gz"], type="filepath")
@@ -60,7 +70,7 @@ with gr.Blocks(title="Medical Imaging AI Review Platform") as demo:
             axial = gr.Image(label="Axial", type="pil")
         info = gr.Textbox(label="Output", interactive=False)
         ct_button.click(segment, inputs=volume, outputs=[sagittal, coronal, axial, info], time_limit=60)
-    gr.Markdown("This hosted copy runs the same model code as the local React/FastAPI app, but shows only the chest X-ray scores and the spleen segmentation. Grad-CAM, SHAP, the review log, the Q&A panel and Orthanc are in the local app. The chest X-ray model scores 0.797 macro AUROC on 999 NIH images; the spleen model scores a mean Dice of 0.877 on 6 held-out CT cases (0.715 before the largest-blob clean-up, which was chosen on validation cases and applied after a first test run). Both are small samples. [Project repository](https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-02)")
+    gr.Markdown("This hosted copy runs the same model code as the local React/FastAPI app, but shows only the chest X-ray scores and the spleen segmentation. Grad-CAM, SHAP, the review log, the Q&A panel and Orthanc are in the local app. The chest X-ray model scores 0.797 macro AUROC on 999 NIH images; the spleen model scores a mean Dice of 0.887 on 6 held-out CT cases (0.715 for the raw network, 0.877 after keeping the largest blob; the 0.4 threshold was chosen on validation cases). Chest scores are averaged over the image and its mirror. Both are small samples. [Project repository](https://github.com/ram15x/nexvia-aiml-internship/tree/main/AIML-02)")
 
 if __name__ == "__main__":
     demo.queue(default_concurrency_limit=1).launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", "7860")), max_file_size="128mb")

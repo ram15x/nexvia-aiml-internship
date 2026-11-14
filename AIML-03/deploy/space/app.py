@@ -1,4 +1,4 @@
-"""Hugging Face Space entry point for the demo in github.com/ram15x/personalized-recommendation-engine.
+"""Hugging Face Space entry point for the demo in github.com/ram15x/nexvia-aiml-internship (folder AIML-03).
 
 At start-up it downloads the public code (branch main) and the trimmed model bundle (branch demo-bundle,
 no per-user rating data), then runs demo/app.py from the repository unchanged.
@@ -20,7 +20,7 @@ try:                                    # ZeroGPU Spaces need one @spaces.GPU fu
 except ImportError:
     pass
 
-OWNER_REPO = "ram15x/personalized-recommendation-engine"
+OWNER_REPO = "ram15x/nexvia-aiml-internship"
 ROOT = Path(os.environ.get("APP_ROOT", "/tmp/rec_app"))
 
 
@@ -35,7 +35,7 @@ def fetch(branch: str) -> Path:
     return dest
 
 
-code, bundle = fetch("main"), fetch("demo-bundle")
+code, bundle = fetch("main") / "AIML-03", fetch("demo-bundle")
 os.environ.update(BUNDLE=str(bundle), TF_USE_LEGACY_KERAS="1", TF_CPP_MIN_LOG_LEVEL="2")
 sys.path.insert(0, str(code / "src"))
 demo = runpy.run_path(str(code / "demo" / "app.py"), run_name="space")["demo"]
