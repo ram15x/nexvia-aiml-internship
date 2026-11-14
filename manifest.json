@@ -1,0 +1,70 @@
+{
+ "time_split": {
+  "train_before": 1466837400,
+  "test_from": 1515033908
+ },
+ "two_tower": {
+  "parts": "/tmp/claude-0/p2/data/parts",
+  "movies": "/tmp/claude-0/p2/data/movies.csv",
+  "out": "/tmp/claude-0/p2/runs/tt_v2",
+  "epochs": 8,
+  "batch": 4096,
+  "dim": 64,
+  "hist": 30,
+  "per_epoch": 1638400,
+  "temp": 0.07,
+  "lr": 0.0005,
+  "l2": 1e-06,
+  "eval_users": 3000,
+  "seed": 42
+ },
+ "candidates_per_user": 250,
+ "n_dense": 52,
+ "rankers": {
+  "dcn": {
+   "epochs_run": 7,
+   "dev_users": 508,
+   "dev_ndcg10_ranker": 0.184,
+   "dev_ndcg10_two_tower_order": 0.1271,
+   "saved_model_max_abs_diff_vs_keras": 0.0
+  },
+  "wide_deep": {
+   "epochs_run": 7,
+   "dev_users": 508,
+   "dev_ndcg10_ranker": 0.1846,
+   "dev_ndcg10_two_tower_order": 0.1271,
+   "saved_model_max_abs_diff_vs_keras": 0.0
+  }
+ },
+ "files": {
+  "catalog.npz": "8d0760cc077f094e",
+  "features/user_history/._SUCCESS.crc": "1d44f510ec2ed759",
+  "features/user_history/.part-00000-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet.crc": "bbd8c01c6dacf9ef",
+  "features/user_history/.part-00001-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet.crc": "2bd72103339c3ce9",
+  "features/user_history/.part-00002-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet.crc": "2e60222652842d38",
+  "features/user_history/_SUCCESS": "e3b0c44298fc1c14",
+  "features/user_history/part-00000-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet": "34304583b9c03086",
+  "features/user_history/part-00001-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet": "49a6ac1e301a96de",
+  "features/user_history/part-00002-1097327d-4d66-40c3-8ab4-a4bab8d58b62-c000.snappy.parquet": "46b5b0640e2f0543",
+  "features/user_seen/._SUCCESS.crc": "1d44f510ec2ed759",
+  "features/user_seen/.part-00000-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet.crc": "2b4a73ec9d8fa2a0",
+  "features/user_seen/.part-00001-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet.crc": "f0583c5f106cf07e",
+  "features/user_seen/.part-00002-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet.crc": "3bb9abb357e4a911",
+  "features/user_seen/_SUCCESS": "e3b0c44298fc1c14",
+  "features/user_seen/part-00000-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet": "2d81227bdaee0ba9",
+  "features/user_seen/part-00001-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet": "cea69b27c36964c3",
+  "features/user_seen/part-00002-9c4b11c6-d4f2-493f-854d-19552c3e568b-c000.snappy.parquet": "4c0878af9e89a935",
+  "item_vectors.npy": "b64899bb9b0674b6",
+  "knn.npz": "18eaec6de544035a",
+  "rankers/dcn/checkpoint": "10c68e19b9ee3362",
+  "rankers/dcn/weights.data-00000-of-00001": "ea00d9dd0e09ff11",
+  "rankers/dcn/weights.index": "8d0d0c6d75584043",
+  "rankers/wide_deep/checkpoint": "10c68e19b9ee3362",
+  "rankers/wide_deep/weights.data-00000-of-00001": "12a837eb1413abea",
+  "rankers/wide_deep/weights.index": "520fd74a1a74ee89",
+  "stats.npz": "0776008cbd134e02",
+  "titles.json": "ab054b2146fcb12d",
+  "two_tower_weights.data-00000-of-00001": "afb116af349f86ae",
+  "two_tower_weights.index": "95ec3bab5a6afd4e"
+ }
+}
