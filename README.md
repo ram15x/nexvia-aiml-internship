@@ -31,6 +31,13 @@ A heavy model cannot score 34,461 films on every request, so a cheap first stage
 
 Details, architecture and run steps: [`AIML-03/README.md`](AIML-03/README.md).
 
+## Live demos
+
+- AIML-02 medical imaging review (lighter Gradio front end): https://ram15x-medical-imaging-ai-review.hf.space/
+- AIML-03 movie recommender: https://huggingface.co/spaces/Ram15x/movie-recommender
+
+Both run on Hugging Face's free tier, so the first load can take a few minutes.
+
 ## Repository layout
 
 ```
