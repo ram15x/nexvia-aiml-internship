@@ -18,10 +18,11 @@ TITLES = sorted(rec.cat.titles.items(), key=lambda kv: -rec.cat.train_count[rec.
 CHOICES = [f"{t}  [{m}]" for m, t in TITLES]
 
 
-def run(liked, genres, ranker, k):
+def run(liked, genres, ranker, k, spread, explain):
     ids = [int(c.rsplit("[", 1)[1].rstrip("]")) for c in (liked or [])]
-    out = rec.recommend(None, int(k), ranker, liked_movie_ids=ids or None, genres=list(genres or []) or None)
-    rows = [[i + 1, x["title"], ", ".join(x["genres"]), x.get("score", "")] for i, x in enumerate(out["items"])]
+    out = rec.recommend(None, int(k), ranker, liked_movie_ids=ids or None, genres=list(genres or []) or None,
+                        diversity=None if spread >= 1.0 else float(spread), explain=bool(explain))
+    rows = [[i + 1, x["title"], ", ".join(x["genres"]), (x.get("because_you_liked") or {}).get("title", "")] for i, x in enumerate(out["items"])]
     why = {"cold_start_popularity": "No liked films given: showing the most popular films.",
            "cold_start_popularity_genre": "No liked films given: most popular films in the chosen genres."}.get(out["route"], f"Personalised: two-tower + item-KNN candidates re-ranked by {ranker}.")
     return rows, f"{why}  Route: `{out['route']}` · {out['latency_ms']} ms · model {out['model_version']}"
@@ -36,11 +37,13 @@ with gr.Blocks(title="Personalised movie recommender") as demo:
             genres = gr.CheckboxGroup([g for g in GENRES if g != "(no genres listed)"], label="Genres (used only when no films are picked)")
             ranker = gr.Radio(["dcn", "wide_deep"], value="dcn", label="Ranker")
             k = gr.Slider(5, 30, value=10, step=1, label="How many")
+            spread = gr.Slider(0.5, 1.0, value=1.0, step=0.1, label="Variety (1.0 = ranker order, lower mixes the list up)")
+            explain = gr.Checkbox(value=True, label="Show which liked film each suggestion is closest to")
             go = gr.Button("Recommend", variant="primary")
         with gr.Column():
-            table = gr.Dataframe(headers=["#", "Title", "Genres", "Ranker logit"], interactive=False, wrap=True, max_height=520, column_widths=["8%", "42%", "36%", "14%"])
+            table = gr.Dataframe(headers=["#", "Title", "Genres", "Because you liked"], interactive=False, wrap=True, max_height=520, column_widths=["6%", "34%", "30%", "30%"])
             info = gr.Markdown()
-    go.click(run, [liked, genres, ranker, k], [table, info])
+    go.click(run, [liked, genres, ranker, k, spread, explain], [table, info])
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))

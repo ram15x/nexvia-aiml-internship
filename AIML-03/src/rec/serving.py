@@ -21,6 +21,7 @@ import tensorflow as tf
 from . import coldstart
 from .cache import RecCache
 from .candidates import build_union
+from .diversity import because, mmr
 from .features import GENRES, Catalog, parse_year
 from .index import build_flat, build_hnsw
 from .knn import ItemKNN
@@ -81,11 +82,13 @@ class Recommender:
         return self.rankers[ranker](feats).numpy()
 
     # ---- main entry ----------------------------------------------------------------------------------------------
-    def recommend(self, user_id: int | None = None, k: int = 10, ranker: str = "dcn", liked_movie_ids=None, genres=None, exclude_movie_ids=None) -> dict:
+    def recommend(self, user_id: int | None = None, k: int = 10, ranker: str = "dcn", liked_movie_ids=None, genres=None, exclude_movie_ids=None,
+                  diversity: float | None = None, explain: bool = False) -> dict:
         t0 = time.perf_counter()
         liked = None if liked_movie_ids is None else [int(x) for x in liked_movie_ids]
         key = self.cache.key(v=self.version, user=user_id, k=k, ranker=ranker, liked=",".join(map(str, liked or [])),
-                             genres=",".join(sorted(genres or [])), exclude=",".join(map(str, sorted(exclude_movie_ids or []))))
+                             genres=",".join(sorted(genres or [])), exclude=",".join(map(str, sorted(exclude_movie_ids or []))),
+                             div=diversity, explain=explain)
         hit = self.cache.get(key)
         if hit is not None:
             hit["cache"] = "hit"; hit["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2); return hit
@@ -102,13 +105,13 @@ class Recommender:
         else:
             if ranker not in self.rankers:
                 raise ValueError(f"unknown ranker {ranker!r}; available: {sorted(self.rankers)}")
-            out = self._personalised(hist_idx, seen, uid, k, ranker)
+            out = self._personalised(hist_idx, seen, uid, k, ranker, diversity, explain)
         out.update(user_id=user_id, k=k, model_version=self.version, cache="miss", history_items=int(len(hist_idx)))
         out["latency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
         self.cache.set(key, out)
         return out
 
-    def _personalised(self, hist_idx, seen, uid, k, ranker) -> dict:
+    def _personalised(self, hist_idx, seen, uid, k, ranker, diversity=None, explain=False) -> dict:
         h = np.concatenate([np.zeros(max(0, self.hist_len - len(hist_idx)), np.int64), hist_idx[-self.hist_len:]]).astype(np.int32)[None]
         cnt = np.array([len(hist_idx)], np.int32)
         q = self.tower.user_vector(tf.constant(h), tf.constant(cnt)).numpy()[0]
@@ -120,5 +123,14 @@ class Recommender:
                        self.stats.item_mean, self.stats.item_n, self.stats.item_pos_rate); u = np.array([0])
         feats = make_features(u, h, cnt, cand[None], cos[None], st, self.cat, extra=extra[None])
         scores = self._rank_scores(ranker, {"dense": tf.constant(feats["dense"]), "year": tf.constant(feats["year"]), "pop": tf.constant(feats["pop"])})
-        top = np.argsort(-scores, kind="stable")[:k]
-        return {"route": f"two_source+{ranker}", "used_exact_fallback": bool(used), "items": self._describe(cand[top], scores[top], source=f"two_source+{ranker}")}
+        if diversity is not None and diversity < 1.0:
+            top = mmr(scores, self.items[cand], k, float(diversity))
+        else:
+            top = np.argsort(-scores, kind="stable")[:k]
+        items = self._describe(cand[top], scores[top], source=f"two_source+{ranker}")
+        if explain:
+            for it, h in zip(items, because(self.items, cand[top], hist_idx[-self.hist_len:])):
+                if h > 0:
+                    mid = int(self.cat.item_ids[h]); it["because_you_liked"] = {"movie_id": mid, "title": self.cat.titles.get(mid, "")}
+        route = f"two_source+{ranker}" + (f"+mmr{diversity}" if diversity is not None and diversity < 1.0 else "")
+        return {"route": route, "used_exact_fallback": bool(used), "items": items}

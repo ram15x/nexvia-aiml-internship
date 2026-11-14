@@ -40,13 +40,14 @@ Run: `BUNDLE=/path/to/bundle REDIS_URL=redis://localhost:6379/0 uvicorn rec.api:
 ### `POST /recommend`
 ```json
 {"user_id": 2, "k": 10, "ranker": "dcn",
- "liked_movie_ids": [260, 1196, 1210], "genres": ["Horror"], "exclude_movie_ids": []}
+ "liked_movie_ids": [260, 1196, 1210], "genres": ["Horror"], "exclude_movie_ids": [],
+ "diversity": 0.7, "explain": true}
 ```
-All fields optional except `k` has a default of 10 (1 to 100). Routing:
+All fields optional except `k` has a default of 10 (1 to 100). `explain: true` adds `because_you_liked` to each personalised item: the liked film whose two-tower vector is closest to it. `diversity` (0 to 1, default off) re-orders the ranked pool of 50 with maximal marginal relevance, where 1 keeps the ranker order and lower values push similar films apart; the measured effect is small (see `docs/limitations.md`, item 12). Routing:
 - `liked_movie_ids` given, or `user_id` known to the Spark tables with >= 1 like: **personalised** (`route: "two_source+dcn"`). Two-tower candidates through FAISS HNSW plus item-KNN candidates, interleaved to 250, re-ranked by the chosen ranker (`dcn` or `wide_deep`).
 - Otherwise: **cold start**, `cold_start_popularity`, or `cold_start_popularity_genre` when `genres` is given.
 
-Response: `{route, items:[{movie_id, title, year, genres, score, source}], user_id, k, model_version, cache: "hit"|"miss", history_items, latency_ms}`. `ranker` other than `dcn`/`wide_deep` returns HTTP 400.
+Response: `{route, items:[{movie_id, title, year, genres, score, source, because_you_liked?}], user_id, k, model_version, cache: "hit"|"miss", history_items, latency_ms}`. `ranker` other than `dcn`/`wide_deep` returns HTTP 400.
 
 ### `POST /recommend/ab`
 Same body (`user_id` required). The ranker is chosen by `sha256("ab-v1:"+user_id) % 2`: even = control (`dcn`), odd = treatment (`wide_deep`). Assignment is stable per user; the response adds `ab_arm`.

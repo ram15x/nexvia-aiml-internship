@@ -34,6 +34,8 @@ class Req(BaseModel):
     liked_movie_ids: list[int] | None = None
     genres: list[str] | None = None
     exclude_movie_ids: list[int] | None = None
+    diversity: float | None = Field(None, ge=0.0, le=1.0, description="MMR lambda: 1 keeps the ranker order, lower values spread the list out")
+    explain: bool = False
 
 
 def arm_for(user_id: int, control: str, treatment: str, salt: str = "ab-v1") -> str:
@@ -51,7 +53,7 @@ def health():
 @app.post("/recommend")
 def recommend(q: Req):
     try:
-        return get().recommend(q.user_id, q.k, q.ranker, q.liked_movie_ids, q.genres, q.exclude_movie_ids)
+        return get().recommend(q.user_id, q.k, q.ranker, q.liked_movie_ids, q.genres, q.exclude_movie_ids, q.diversity, q.explain)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -61,7 +63,7 @@ def recommend_ab(q: Req):
     if q.user_id is None:
         raise HTTPException(400, "user_id is required for A/B assignment")
     arm = arm_for(q.user_id, os.environ.get("AB_CONTROL", "dcn"), os.environ.get("AB_TREATMENT", "wide_deep"))
-    out = get().recommend(q.user_id, q.k, arm, q.liked_movie_ids, q.genres, q.exclude_movie_ids)
+    out = get().recommend(q.user_id, q.k, arm, q.liked_movie_ids, q.genres, q.exclude_movie_ids, q.diversity, q.explain)
     out["ab_arm"] = arm
     return out
 

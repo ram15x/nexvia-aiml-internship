@@ -20,9 +20,10 @@ The demo runs on Hugging Face's free tier, so it can take a few minutes to wake 
 
 1. **Retrieve.** Two sources each suggest candidates: a TensorFlow Recommenders **two-tower** model searched through a **FAISS HNSW** index, and **item-based collaborative filtering**. Together they supply about 250 candidates per user.
 2. **Rank.** A **DCN-v2** model orders the candidates. A **Wide & Deep** model runs as the challenger in the A/B test.
-3. **Handle new users.** With no history, the system falls back to popularity, optionally filtered by genre.
-4. **Serve.** A **FastAPI** service with a **Redis** response cache returns results, and assigns each user to an A/B arm by hashing their ID.
-5. **Stay fresh.** **Spark** builds the feature tables, and an **Airflow** DAG retrains the models weekly behind a quality gate before promoting them.
+3. **Explain.** Ask for `explain` and each suggestion says which of your liked films it is closest to. An optional `diversity` setting re-orders the shortlist to spread similar films apart.
+4. **Handle new users.** With no history, the system falls back to popularity, optionally filtered by genre.
+5. **Serve.** A **FastAPI** service with a **Redis** response cache returns results, and assigns each user to an A/B arm by hashing their ID.
+6. **Stay fresh.** **Spark** builds the feature tables, and an **Airflow** DAG retrains the models weekly behind a quality gate before promoting them.
 
 ## Results
 
@@ -52,7 +53,7 @@ Full tables, validation numbers and cold-start cohorts are in [`docs/results.md`
 |---|---|
 | Data pipeline and time-split evaluation | Complete. `prepare_data.py` was re-run on the full 25,000,095-row file and its output matches the arrays used here (`results/data_prep_verification.json`). |
 | Retrieval, ranking, cold start, serving, caching | Complete and tested. |
-| Tests | 26 pass on a fresh clone, 34 with a model bundle (the API, Triton-client and trimmed-bundle tests need one). |
+| Tests | 31 pass on a fresh clone, 39 with a model bundle (the API, Triton-client and trimmed-bundle tests need one). |
 | Spark feature tables | Complete. They match an independent NumPy calculation. |
 | Airflow retraining | Executed end to end with Airflow 3.1.8, including one run the quality gate blocked and one it promoted (`results/airflow_runs.json`). |
 | Live demo | Running on Hugging Face Spaces. |
@@ -110,6 +111,8 @@ curl -s localhost:8000/recommend -H 'content-type: application/json' \
      -d '{"liked_movie_ids":[260,1196,1210],"k":5}'                           # personalised
 curl -s localhost:8000/recommend -H 'content-type: application/json' \
      -d '{"k":5,"genres":["Documentary"]}'                                    # cold start
+curl -s localhost:8000/recommend -H 'content-type: application/json' \
+     -d '{"liked_movie_ids":[260,1196,1210],"k":5,"explain":true}'          # with "because you liked"
 curl -s localhost:8000/recommend/ab -H 'content-type: application/json' \
      -d '{"user_id":42,"k":5}'                                                # A/B arm by user hash
 ```
