@@ -51,7 +51,3 @@ Each project has its own dependencies. Install and run from inside the project f
 
 - [`AIML-02/deliverables/AIML02_Project1_Final.pptx`](AIML-02/deliverables/AIML02_Project1_Final.pptx)
 - [`AIML-03/deliverables/AIML03_Recommendation_Engine.pptx`](AIML-03/deliverables/AIML03_Recommendation_Engine.pptx)
-
-## Notice
-
-AIML-02 is an educational prototype and must not be used for diagnosis or any clinical decision.
