@@ -135,7 +135,7 @@ python evaluate_segmentation.py --dataset-json <dataset.json> --dataset-root <fo
 | Imaging server | Orthanc (Docker Compose profile) |
 | Frontend | React 19, Vite |
 | Packaging and demo | Docker Compose, Gradio on a Hugging Face Space |
-| Testing | pytest (96 pass, 4 skipped), live Orthanc check |
+| Testing | pytest (102 pass, 4 skipped), live Orthanc check |
 
 ## Security notes
 
